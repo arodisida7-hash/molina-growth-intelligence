@@ -1,0 +1,49 @@
+import { ReactNode } from "react";
+import Link from "next/link";
+import { CalendarDays, ChevronRight, Download } from "lucide-react";
+
+import { AppSidebar, MobileNav } from "@/components/layout/app-sidebar";
+import { buttonVariants } from "@/components/ui/button";
+
+export function DashboardShell({ children }: { children: ReactNode }) {
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="mx-auto flex min-h-screen max-w-[1720px]">
+        <AppSidebar />
+        <div className="flex min-h-screen flex-1 flex-col">
+          <header className="sticky top-0 z-20 border-b border-white/10 bg-[#060816]/80 px-5 py-4 backdrop-blur-xl md:px-8 xl:px-10">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-xs uppercase tracking-[0.24em] text-slate-400">
+                  <CalendarDays className="h-4 w-4" />
+                  Corte al 11 de marzo de 2026
+                </div>
+                <p className="text-sm text-slate-300">
+                  Demo ejecutivo para decisiones de crecimiento comercial, expansion regional y defensa de margen.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <Link href="/api/report" className={buttonVariants("secondary")}>
+                  <span className="inline-flex items-center gap-2">
+                    <Download className="h-4 w-4" />
+                    JSON del reporte
+                  </span>
+                </Link>
+                <Link href="/" className={buttonVariants("ghost")}>
+                  <span className="inline-flex items-center gap-2">
+                    Volver a la portada
+                    <ChevronRight className="h-4 w-4" />
+                  </span>
+                </Link>
+              </div>
+            </div>
+            <div className="mt-4">
+              <MobileNav />
+            </div>
+          </header>
+          <main className="flex-1 px-5 py-8 md:px-8 xl:px-10">{children}</main>
+        </div>
+      </div>
+    </div>
+  );
+}
