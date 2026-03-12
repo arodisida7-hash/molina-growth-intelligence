@@ -20,7 +20,7 @@ export function AiOpportunityEnginePage() {
       <PageHeader
         eyebrow="Motor de Oportunidades IA"
         title="Motor de deteccion de oportunidades y riesgos"
-        description="Interfaz tipo copiloto para priorizar expansion, detectar fricciones marginales y traducir senales cruzadas en acciones concretas."
+        description="Capa de inteligencia que cruza senales de CRM, SAP, marketing y distribucion para priorizar expansion, margen y decisiones comerciales."
       />
 
       <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
@@ -60,7 +60,7 @@ export function AiOpportunityEnginePage() {
                 {expanded ? (
                   <CardContent className="grid gap-4 md:grid-cols-[1.2fr_0.8fr]">
                     <div className="space-y-4 rounded-3xl border border-white/10 bg-[#09101F] p-5">
-                      <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Razonamiento de la señal</p>
+                      <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Razonamiento de la senal</p>
                       <div className="space-y-3">
                         {opportunity.rationale.map((item) => (
                           <div key={item} className="rounded-2xl bg-white/[0.03] px-4 py-3 text-sm leading-6 text-slate-200">
@@ -98,6 +98,11 @@ export function AiOpportunityEnginePage() {
             </p>
           </CardHeader>
           <CardContent className="space-y-5">
+            <div className="rounded-2xl border border-accent/20 bg-accent/10 p-4 text-sm leading-7 text-slate-100">
+              Impacto potencial estimado: {dashboardData.impactPotential.salesLift}, {dashboardData.impactPotential.marginLift} y{" "}
+              {dashboardData.impactPotential.marketingLift}
+              <p className="mt-2 text-xs text-slate-300">{dashboardData.impactPotential.note}</p>
+            </div>
             <Button className="w-full justify-between" onClick={() => setPlan(generateActionPlan(dashboardData.opportunities))}>
               <span>Generar plan de accion</span>
               <WandSparkles className="h-4 w-4" />
@@ -113,7 +118,8 @@ export function AiOpportunityEnginePage() {
               </div>
             ) : (
               <div className="rounded-3xl border border-dashed border-white/10 bg-[#09101F] p-6 text-sm leading-7 text-slate-300">
-                El motor listara una ruta de ejecucion en 4 semanas alineada a producto, region y canal.
+                El motor listara una ruta de ejecucion en 4 semanas alineada a producto, region y canal, utilizando la
+                lectura consolidada de la infraestructura existente.
               </div>
             )}
           </CardContent>

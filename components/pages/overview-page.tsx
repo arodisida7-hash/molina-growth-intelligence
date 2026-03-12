@@ -14,11 +14,13 @@ import {
   XAxis,
   YAxis
 } from "recharts";
-import { ArrowUpRight, BrainCircuit, MapPinned, ShieldAlert, Sparkles } from "lucide-react";
+import { ArrowUpRight, BrainCircuit, DatabaseZap, MapPinned, ShieldAlert, Sparkles, TrendingUp } from "lucide-react";
 
+import { PrototypeNote } from "@/components/common/prototype-note";
 import { ChartCard } from "@/components/common/chart-card";
 import { MetricCard } from "@/components/common/metric-card";
 import { PageHeader } from "@/components/common/page-header";
+import { SourceChip } from "@/components/common/source-chip";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -33,20 +35,59 @@ export function OverviewPage() {
       <PageHeader
         eyebrow="Resumen Ejecutivo"
         title="Centro de mando para expansion comercial rentable"
-        description="Lectura consolidada para direccion general: ingresos, margen, eficiencia comercial y focos regionales convertidos en decisiones semanales."
+        description="Capa de inteligencia comercial que conecta infraestructura existente, senales del negocio y prioridades ejecutivas para direccion general."
         aside={
           <div className="rounded-3xl border border-white/10 bg-white/[0.04] px-5 py-4">
-            <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Ventana observada</p>
-            <p className="mt-2 text-sm text-slate-200">Abril 2025 a marzo 2026</p>
+            <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Integracion enterprise</p>
+            <p className="mt-2 text-sm text-slate-200">Disenado para integrarse con la infraestructura comercial y analitica existente.</p>
           </div>
         }
       />
+
+      <section className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
+        <Card className="surface-highlight border-white/10 bg-gradient-to-r from-white/[0.06] to-white/[0.03]">
+          <CardHeader>
+            <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-accent">
+              <DatabaseZap className="h-4 w-4" />
+              Fuentes de informacion conectadas
+            </div>
+            <CardTitle className="text-3xl">{dashboardData.enterprisePositioning.statement}</CardTitle>
+            <p className="max-w-3xl text-sm leading-7 text-slate-300">{dashboardData.enterprisePositioning.supporting}</p>
+          </CardHeader>
+          <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {dashboardData.connectedSources.map((source) => (
+              <SourceChip key={source.name} name={source.name} category={source.category} />
+            ))}
+          </CardContent>
+        </Card>
+        <Card className="border-white/10 bg-white/[0.04]">
+          <CardHeader>
+            <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-slate-400">
+              <TrendingUp className="h-4 w-4" />
+              Impacto potencial estimado
+            </div>
+            <CardTitle className="text-3xl">Lectura ejecutiva derivada del motor de oportunidades</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {[
+              dashboardData.impactPotential.salesLift,
+              dashboardData.impactPotential.marginLift,
+              dashboardData.impactPotential.marketingLift
+            ].map((item) => (
+              <div key={item} className="rounded-2xl border border-white/10 bg-[#09101F] px-4 py-4 text-base text-white">
+                {item}
+              </div>
+            ))}
+            <p className="text-xs leading-6 text-slate-500">{dashboardData.impactPotential.note}</p>
+          </CardContent>
+        </Card>
+      </section>
 
       <section className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
         <MetricCard
           title="Ingresos YTD"
           value={formatCompactCurrency(dashboardData.kpis.revenueYtd)}
-          detail="El portafolio mantiene crecimiento orgánico sostenido con mayor aporte de la linea natural."
+          detail="El portafolio mantiene crecimiento organico sostenido con mayor aporte de la linea natural."
           delta={dashboardData.kpis.growth}
         />
         <MetricCard
@@ -95,31 +136,104 @@ export function OverviewPage() {
           </div>
         </ChartCard>
 
-        <Card className="surface-highlight border-white/10 bg-white/[0.04]">
-          <CardHeader className="space-y-4">
+        <Card className="surface-highlight overflow-hidden border-white/10 bg-gradient-to-br from-accent/10 via-white/[0.05] to-blue-400/10 shadow-glow">
+          <CardHeader className="space-y-4 border-b border-white/10 pb-6">
             <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-accent">
               <BrainCircuit className="h-4 w-4" />
-              Brief ejecutivo IA
+              Executive Weekly Brief
             </div>
             <div>
-              <CardTitle className="text-2xl">{dashboardData.executiveBrief.title}</CardTitle>
-              <p className="mt-3 text-sm leading-7 text-slate-300">{dashboardData.executiveBrief.summary}</p>
+              <CardTitle className="text-3xl">Ahorra tiempo a direccion y acelera decisiones comerciales</CardTitle>
+              <p className="mt-3 text-sm leading-7 text-slate-200">{dashboardData.executiveBrief.summary}</p>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {dashboardData.executiveBrief.bullets.map((bullet) => (
-              <div key={bullet} className="rounded-2xl border border-white/10 bg-[#09101F] px-4 py-4 text-sm leading-6 text-slate-200">
-                {bullet}
-              </div>
-            ))}
+          <CardContent className="space-y-4 pt-6">
+            <div className="rounded-2xl border border-accent/20 bg-accent/10 p-4 text-sm leading-7 text-slate-100">
+              El brief consolida oportunidades detectadas, riesgos relevantes y recomendaciones sugeridas para direccion
+              en una sola lectura semanal.
+            </div>
+            <div className="space-y-3">
+              {dashboardData.executiveBrief.bullets.map((bullet, index) => (
+                <div key={bullet} className="rounded-2xl border border-white/10 bg-[#09101F] px-4 py-4 text-sm leading-6 text-slate-200">
+                  <p className="mb-2 text-xs uppercase tracking-[0.16em] text-accent">Lectura {index + 1}</p>
+                  {bullet}
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-3">
+      <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+        <Card className="border-white/10 bg-white/[0.04]">
+          <CardHeader>
+            <div className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-accent">
+              <Sparkles className="h-4 w-4" />
+              Top oportunidades comerciales
+            </div>
+            <CardTitle className="text-2xl">Hipotesis ejecutivas priorizadas por el motor</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {dashboardData.strategicOpportunities.map((item, index) => (
+              <div key={`${item.region}-${item.product}`} className="rounded-3xl border border-white/10 bg-[#09101F] p-5">
+                <div className="flex items-center justify-between gap-4">
+                  <p className="text-sm uppercase tracking-[0.18em] text-slate-500">Oportunidad {index + 1}</p>
+                  <Badge variant="accent">{item.region}</Badge>
+                </div>
+                <p className="mt-3 font-display text-2xl text-white">{item.product}</p>
+                <p className="mt-3 text-sm leading-7 text-slate-300">{item.hypothesis}</p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Card className="border-white/10 bg-white/[0.04]">
+          <CardHeader>
+            <CardTitle>Regiones y SKUs lideres</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-6">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-slate-400">
+                <MapPinned className="h-4 w-4" />
+                Regiones con mayor prioridad
+              </div>
+              {topRegionsByOpportunity.slice(0, 4).map((region) => (
+                <div key={region.region} className="flex items-center justify-between rounded-2xl border border-white/10 bg-[#09101F] px-4 py-3">
+                  <div>
+                    <p className="text-sm text-white">{region.region}</p>
+                    <p className="text-xs text-slate-400">{formatChannelLabel(region.dominantChannel)}</p>
+                  </div>
+                  <Badge variant="accent">{region.opportunityScore}</Badge>
+                </div>
+              ))}
+            </div>
+            <Separator />
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-slate-400">
+                <Sparkles className="h-4 w-4" />
+                SKUs con mayor traccion
+              </div>
+              {dashboardData.topSkus.map((sku) => (
+                <div key={sku.name} className="flex items-center justify-between rounded-2xl bg-white/[0.03] px-4 py-3">
+                  <div>
+                    <p className="text-sm text-white">{sku.name}</p>
+                    <p className="text-xs text-slate-400">{formatCompactCurrency(sku.revenue)}</p>
+                  </div>
+                  <div className="inline-flex items-center gap-1 text-sm text-emerald-300">
+                    <ArrowUpRight className="h-4 w-4" />
+                    {formatPercent(sku.growth)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
         <ChartCard
           title="Mix por canal"
-          description="La contribucion de autoservicio y distribuidores sigue siendo dominante, pero food service gana peso."
+          description="La capa de inteligencia revela como evoluciona el peso de canal sin reemplazar la lectura operativa de los sistemas existentes."
         >
           <div className="grid items-center gap-6 lg:grid-cols-[0.9fr_1.1fr]">
             <div className="h-[240px]">
@@ -167,48 +281,6 @@ export function OverviewPage() {
             </ResponsiveContainer>
           </div>
         </ChartCard>
-
-        <Card className="border-white/10 bg-white/[0.04]">
-          <CardHeader>
-            <CardTitle>Regiones y SKUs lideres</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-6">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-slate-400">
-                <MapPinned className="h-4 w-4" />
-                Regiones con mayor prioridad
-              </div>
-              {topRegionsByOpportunity.slice(0, 4).map((region) => (
-                <div key={region.region} className="flex items-center justify-between rounded-2xl border border-white/10 bg-[#09101F] px-4 py-3">
-                  <div>
-                    <p className="text-sm text-white">{region.region}</p>
-                    <p className="text-xs text-slate-400">{formatChannelLabel(region.dominantChannel)}</p>
-                  </div>
-                  <Badge variant="accent">{region.opportunityScore}</Badge>
-                </div>
-              ))}
-            </div>
-            <Separator />
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-slate-400">
-                <Sparkles className="h-4 w-4" />
-                SKUs con mayor traccion
-              </div>
-              {dashboardData.topSkus.map((sku) => (
-                <div key={sku.name} className="flex items-center justify-between rounded-2xl bg-white/[0.03] px-4 py-3">
-                  <div>
-                    <p className="text-sm text-white">{sku.name}</p>
-                    <p className="text-xs text-slate-400">{formatCompactCurrency(sku.revenue)}</p>
-                  </div>
-                  <div className="inline-flex items-center gap-1 text-sm text-emerald-300">
-                    <ArrowUpRight className="h-4 w-4" />
-                    {formatPercent(sku.growth)}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
@@ -249,6 +321,10 @@ export function OverviewPage() {
           </CardContent>
         </Card>
       </section>
+
+      <div className="pt-2">
+        <PrototypeNote />
+      </div>
     </div>
   );
 }

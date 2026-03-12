@@ -1,14 +1,17 @@
 import Link from "next/link";
-import { ArrowRight, Bot, ChartColumnIncreasing, MapPinned, Sparkles } from "lucide-react";
+import { ArrowRight, Bot, ChartColumnIncreasing, DatabaseZap, MapPinned, Sparkles } from "lucide-react";
 
+import { PrototypeNote } from "@/components/common/prototype-note";
+import { SourceChip } from "@/components/common/source-chip";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { dashboardData } from "@/lib/mock-data";
 
 const pillars = [
   {
     icon: ChartColumnIncreasing,
     title: "Visibilidad ejecutiva unificada",
-    text: "Ingresos, margen, marketing y distribucion integrados en una sola narrativa para direccion general."
+    text: "Conecta fuentes comerciales dispersas y las convierte en una lectura estrategica para direccion general."
   },
   {
     icon: MapPinned,
@@ -18,7 +21,7 @@ const pillars = [
   {
     icon: Bot,
     title: "IA orientada a decisiones",
-    text: "Convierte senales operativas y comerciales en recomendaciones accionables, no en dashboards decorativos."
+    text: "Prioriza oportunidades, riesgos de margen y decisiones comerciales sin competir con CRM, SAP ni BI."
   }
 ];
 
@@ -31,17 +34,28 @@ export default function LandingPage() {
           <div className="max-w-3xl space-y-8">
             <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-4 py-2 text-xs uppercase tracking-[0.24em] text-accent">
               <Sparkles className="h-4 w-4" />
-              Capa de inteligencia comercial para expansion rentable
+              AI Layer for Commercial Intelligence
             </div>
             <div className="space-y-6">
               <h1 className="font-display text-5xl font-semibold tracking-tight text-white md:text-7xl">
                 Molina Growth Intelligence
               </h1>
-              <p className="max-w-2xl text-balance text-lg leading-8 text-slate-300 md:text-xl">
-                Plataforma demo de nivel consejo que integra senales de marketing, ventas, distribucion y margen para
-                detectar oportunidades reales de crecimiento para una marca mexicana de alimentos con legado y ambicion
-                nacional.
+              <p className="text-sm uppercase tracking-[0.24em] text-slate-400 md:text-base">
+                AI Layer for Commercial Intelligence
               </p>
+              <p className="max-w-2xl text-balance text-lg leading-8 text-slate-300 md:text-xl">
+                Conecta CRM, SAP y fuentes de marketing para detectar oportunidades comerciales, riesgos de margen y
+                prioridades de expansion antes de que aparezcan en reportes tardios.
+              </p>
+              <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5">
+                <div className="flex items-start gap-3">
+                  <DatabaseZap className="mt-1 h-5 w-5 text-accent" />
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-white">{dashboardData.enterprisePositioning.statement}</p>
+                    <p className="text-sm leading-6 text-slate-300">{dashboardData.enterprisePositioning.supporting}</p>
+                  </div>
+                </div>
+              </div>
             </div>
             <div className="flex flex-wrap gap-4">
               <Link href="/overview" className={buttonVariants()}>
@@ -53,6 +67,11 @@ export default function LandingPage() {
               <Link href="/board-report" className={buttonVariants("secondary")}>
                 Ver memo del consejo
               </Link>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {dashboardData.connectedSources.slice(0, 3).map((source) => (
+                <SourceChip key={source.name} name={source.name} category={source.category} />
+              ))}
             </div>
             <div className="grid gap-4 md:grid-cols-3">
               {pillars.map((pillar) => {
@@ -79,7 +98,7 @@ export default function LandingPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Pulso ejecutivo</p>
-                  <h2 className="mt-2 font-display text-3xl text-white">Lo que cambia la conversacion</h2>
+                  <h2 className="mt-2 font-display text-3xl text-white">La capa que hace mas inteligente la infraestructura actual</h2>
                 </div>
                 <div className="rounded-full bg-accent/10 px-3 py-1 text-xs uppercase tracking-[0.2em] text-accent">
                   Demo boardroom
@@ -87,10 +106,10 @@ export default function LandingPage() {
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 {[
-                  ["Expansion prioritaria", "Monterrey, Merida y Cancun concentran la mejor combinacion de demanda y margen."],
-                  ["Riesgo inmediato", "Vainilla Cristalina pierde rentabilidad por presion promocional sostenida."],
-                  ["Canal a escalar", "Food service y recetas digitales capturan mayor valor incremental."],
-                  ["Siguiente accion", "Reasignar gasto tactico hacia creatividad premium y cobertura regional selectiva."]
+                  ["Expansion prioritaria", "Monterrey, Queretaro y Cancun concentran la mejor combinacion de demanda, baja penetracion y margen."],
+                  ["Riesgo inmediato", "Vainilla Cristalina pierde rentabilidad y exige lectura anticipada antes del siguiente cierre."],
+                  ["Integracion existente", "CRM, SAP, BI y campanas digitales ya aportan las senales que el motor necesita para priorizar."],
+                  ["Siguiente accion", "Reasignar foco comercial hacia expansion selectiva y creatividad premium respaldada por datos."]
                 ].map(([title, text]) => (
                   <div key={title} className="rounded-3xl border border-white/10 bg-[#0A1021] p-5 transition duration-300 hover:-translate-y-1">
                     <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{title}</p>
@@ -101,10 +120,11 @@ export default function LandingPage() {
               <div className="rounded-3xl border border-accent/15 bg-gradient-to-r from-accent/10 to-blue-400/10 p-6">
                 <p className="text-xs uppercase tracking-[0.2em] text-accent">Posicionamiento</p>
                 <p className="mt-3 text-base leading-7 text-slate-100">
-                  Molina Growth Intelligence no reemplaza CRM ni ERP. Se monta por encima de los sistemas existentes
-                  para dar lectura ejecutiva, priorizacion de expansion y claridad comercial semanal.
+                  Molina Growth Intelligence no reemplaza CRM, SAP ni BI. Se integra por encima de la infraestructura
+                  comercial y analitica existente para conectar senales del negocio y acelerar decisiones de direccion.
                 </p>
               </div>
+              <PrototypeNote />
             </div>
           </Card>
         </div>

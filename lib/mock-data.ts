@@ -2,12 +2,15 @@ import {
   AlertItem,
   CampaignMetric,
   ChannelMixItem,
+  ConnectedSource,
   DashboardData,
   DistributorMetric,
+  ImpactPotential,
   OpportunityCard,
   ProductFamily,
   ProductMetric,
-  RegionMetric
+  RegionMetric,
+  StrategicOpportunitySummary
 } from "@/lib/types";
 
 const monthLabels = [
@@ -545,6 +548,40 @@ const creativeThemes = [
   { theme: "Conveniencia premium para retail moderno", lift: 15 }
 ];
 
+const connectedSources: ConnectedSource[] = [
+  { name: "CRM", category: "Relacion comercial" },
+  { name: "SAP / ERP", category: "Finanzas y operacion" },
+  { name: "Campanas digitales", category: "Marketing" },
+  { name: "Distribucion regional", category: "Cobertura y servicio" },
+  { name: "Reportes comerciales", category: "Sell-in y sell-out" },
+  { name: "Business Intelligence", category: "Modelado y analitica" }
+];
+
+const strategicOpportunities: StrategicOpportunitySummary[] = [
+  {
+    region: "Monterrey",
+    product: "Extracto Natural",
+    hypothesis: "Oportunidad de expansion premium en food service con mejor ticket y margen incremental."
+  },
+  {
+    region: "Cancun",
+    product: "Linea Natural",
+    hypothesis: "Oportunidad de aceleracion food service si se corrige cobertura y frecuencia de abastecimiento."
+  },
+  {
+    region: "Queretaro",
+    product: "Cocoa",
+    hypothesis: "Oportunidad de crecimiento digital para reposteria con contenido de conversion y bajo riesgo logistico."
+  }
+];
+
+const impactPotential: ImpactPotential = {
+  salesLift: "+6% a +9% ventas regionales",
+  marginLift: "+2% a +3% margen promedio",
+  marketingLift: "+10% a +12% eficiencia de marketing",
+  note: "Estimacion exploratoria basada en senales comerciales simuladas."
+};
+
 const opportunities: OpportunityCard[] = [
   {
     id: "opp-1",
@@ -567,7 +604,7 @@ const opportunities: OpportunityCard[] = [
   {
     id: "opp-2",
     title: "Acelerar Merida con contenido de recetas",
-    description: "La ciudad combina engagement digital alto, bajo nivel de penetracion y riesgo logístico contenido.",
+    description: "La ciudad combina engagement digital alto, bajo nivel de penetracion y riesgo logistico contenido.",
     type: "Oportunidad",
     confidence: 89,
     impactRange: "$4.2M - $5.4M",
@@ -575,7 +612,7 @@ const opportunities: OpportunityCard[] = [
     region: "Merida",
     channel: "E-commerce",
     score: 87,
-    action: "Conectar campañas de recetas con surtido hero y reposicion automatizada para marketplaces regionales.",
+    action: "Conectar campanas de recetas con surtido hero y reposicion automatizada para marketplaces regionales.",
     rationale: [
       "Engagement de contenido por arriba de 80.",
       "Stock risk por debajo de 20.",
@@ -657,17 +694,30 @@ export const dashboardData: DashboardData = {
   executiveBrief: {
     title: "Resumen ejecutivo semanal",
     summary:
-      "Molina Growth Intelligence identifica una ventana clara para acelerar expansion rentable en ciudades con alta demanda culinaria y baja penetracion relativa. La mejor combinacion de crecimiento y margen proviene de la linea natural, mientras que ciertas familias defensivas requieren disciplina promocional.",
+      "Molina Growth Intelligence opera como una capa de inteligencia comercial sobre la infraestructura existente. Al conectar CRM, SAP, marketing, distribucion y analitica, adelanta oportunidades de expansion rentable y riesgos de margen antes de que aparezcan en reportes tardios.",
     bullets: [
-      "Monterrey, Merida y Cancun concentran el mayor retorno incremental esperado en los proximos 90 dias.",
-      "Recetas y creatividad premium superan consistentemente a las campañas tacticas en eficiencia comercial.",
-      "La compresion marginal en Vainilla Cristalina y Azucar Glass requiere accion correctiva inmediata."
+      "Monterrey, Queretaro y Cancun concentran la mejor combinacion de demanda, baja penetracion y margen incremental.",
+      "La lectura cruzada entre CRM, marketing y cobertura regional sugiere reasignar inversion hacia expansion selectiva.",
+      "La compresion marginal en Vainilla Cristalina y Azucar Glass requiere accion correctiva antes del siguiente cierre comercial."
     ]
   },
   alerts,
   recommendedActions,
   opportunities,
-  creativeThemes
+  creativeThemes,
+  connectedSources,
+  strategicOpportunities,
+  impactPotential,
+  enterprisePositioning: {
+    label: "Disenado para empresa madura",
+    statement: "Construido para potenciar CRM, SAP y BI con una capa de inteligencia orientada a decisiones.",
+    supporting:
+      "Conecta fuentes actuales, acelera lectura estrategica y ayuda a direccion a priorizar expansion, margen y cobertura sin reemplazar sistemas existentes."
+  },
+  prototypeNote: {
+    label: "Prototype Concept",
+    statement: "Exploratory Intelligence Layer for Commercial Decision Support"
+  }
 };
 
 export const topRegionsByOpportunity = [...regions].sort((a, b) => b.opportunityScore - a.opportunityScore).slice(0, 5);

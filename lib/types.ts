@@ -137,6 +137,24 @@ export interface AlertItem {
   level: PriorityLevel;
 }
 
+export interface ConnectedSource {
+  name: string;
+  category: string;
+}
+
+export interface StrategicOpportunitySummary {
+  region: RegionName;
+  product: ProductFamily | "Linea Natural";
+  hypothesis: string;
+}
+
+export interface ImpactPotential {
+  salesLift: string;
+  marginLift: string;
+  marketingLift: string;
+  note: string;
+}
+
 export interface DashboardData {
   months: MonthlyPoint[];
   products: ProductMetric[];
@@ -156,4 +174,16 @@ export interface DashboardData {
   recommendedActions: string[];
   opportunities: OpportunityCard[];
   creativeThemes: Array<{ theme: string; lift: number }>;
+  connectedSources: ConnectedSource[];
+  strategicOpportunities: StrategicOpportunitySummary[];
+  impactPotential: ImpactPotential;
+  enterprisePositioning: {
+    label: string;
+    statement: string;
+    supporting: string;
+  };
+  prototypeNote: {
+    label: string;
+    statement: string;
+  };
 }

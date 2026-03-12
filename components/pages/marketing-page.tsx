@@ -30,7 +30,7 @@ export function MarketingIntelligencePage() {
       <PageHeader
         eyebrow="Inteligencia de Marketing"
         title="Asignacion de gasto, creatividad y retorno comercial"
-        description="Lectura de eficiencia para decidir donde escalar campañas, donde corregir mensaje y que creatividad mueve ingresos con mejor economics."
+        description="Lectura de eficiencia para decidir donde escalar campanas, donde corregir mensaje y que creatividad mueve ingresos con mejor retorno comercial."
       />
 
       <section className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">

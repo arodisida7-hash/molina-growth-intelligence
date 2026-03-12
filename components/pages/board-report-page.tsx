@@ -19,7 +19,7 @@ export function BoardReportPage() {
       <PageHeader
         eyebrow="Reporte de Consejo"
         title="Memo semanal para direccion general y consejo"
-        description="Layout de exportacion listo para presentacion: oportunidades prioritarias, riesgos relevantes, acciones y un experimento estrategico recomendado."
+        description="Funcionalidad estrella para condensar oportunidades detectadas, riesgos relevantes y recomendaciones sugeridas para direccion en un solo memo semanal."
         aside={
           <Link href="/api/report" className={buttonVariants("secondary")}>
             <span className="inline-flex items-center gap-2">
@@ -30,15 +30,19 @@ export function BoardReportPage() {
         }
       />
 
-      <Card className="surface-highlight border-white/10 bg-white/[0.04]">
+      <Card className="surface-highlight overflow-hidden border-white/10 bg-gradient-to-br from-accent/10 via-white/[0.05] to-blue-400/10 shadow-glow">
         <CardHeader className="border-b border-white/10 pb-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-3">
               <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-accent">
                 <FileText className="h-4 w-4" />
-                Memo ejecutivo generado
+                Executive Weekly Brief
               </div>
-              <CardTitle className="text-3xl">Resumen natural-language</CardTitle>
+              <CardTitle className="text-4xl">Resumen ejecutivo listo para direccion</CardTitle>
+              <p className="max-w-3xl text-sm leading-7 text-slate-200">
+                Sintetiza las senales del negocio en una lectura semanal que ayuda a ahorrar tiempo, enfocar la
+                conversacion directiva y acelerar decisiones comerciales.
+              </p>
             </div>
             <Badge variant="accent">Corte semanal</Badge>
           </div>

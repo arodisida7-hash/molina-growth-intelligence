@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CalendarDays, ChevronRight, Download } from "lucide-react";
 
 import { AppSidebar, MobileNav } from "@/components/layout/app-sidebar";
+import { PrototypeNote } from "@/components/common/prototype-note";
 import { buttonVariants } from "@/components/ui/button";
 
 export function DashboardShell({ children }: { children: ReactNode }) {
@@ -19,7 +20,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
                   Corte al 11 de marzo de 2026
                 </div>
                 <p className="text-sm text-slate-300">
-                  Demo ejecutivo para decisiones de crecimiento comercial, expansion regional y defensa de margen.
+                  Capa de inteligencia comercial para potenciar CRM, SAP y BI con decisiones de expansion, margen y cobertura.
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-3">
@@ -42,6 +43,14 @@ export function DashboardShell({ children }: { children: ReactNode }) {
             </div>
           </header>
           <main className="flex-1 px-5 py-8 md:px-8 xl:px-10">{children}</main>
+          <footer className="border-t border-white/10 px-5 py-4 md:px-8 xl:px-10">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <p className="text-sm text-slate-500">
+                Construido para integrarse con la infraestructura comercial y analitica existente.
+              </p>
+              <PrototypeNote compact />
+            </div>
+          </footer>
         </div>
       </div>
     </div>
