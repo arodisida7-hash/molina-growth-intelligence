@@ -6,6 +6,7 @@ import {
   AreaChart,
   FileText,
   LayoutDashboard,
+  type LucideIcon,
   Map,
   Package2,
   Truck
@@ -13,15 +14,54 @@ import {
 
 import { cn } from "@/lib/utils";
 
-export const navItems = [
-  { href: "/overview", label: "Resumen Ejecutivo", icon: LayoutDashboard },
-  { href: "/product-margin", label: "Producto y Margen", icon: Package2 },
-  { href: "/opportunity-map", label: "Mapa de Oportunidad", icon: Map },
-  { href: "/marketing-intelligence", label: "Inteligencia de Marketing", icon: AreaChart },
-  { href: "/distribution-intelligence", label: "Inteligencia de Distribucion", icon: Truck },
-  { href: "/ai-opportunity-engine", label: "Motor de Oportunidades", icon: Activity },
-  { href: "/board-report", label: "Reporte de Consejo", icon: FileText }
-] as const;
+type NavItem = {
+  href:
+    | "/overview"
+    | "/ai-opportunity-engine"
+    | "/board-report"
+    | "/opportunity-map"
+    | "/distribution-intelligence"
+    | "/product-margin"
+    | "/marketing-intelligence";
+  label: string;
+  icon: LucideIcon;
+};
+
+type NavSection = {
+  label: string;
+  items: NavItem[];
+};
+
+export const navSections: NavSection[] = [
+  {
+    label: "Overview",
+    items: [{ href: "/overview", label: "Resumen Ejecutivo", icon: LayoutDashboard }]
+  },
+  {
+    label: "Commercial Intelligence",
+    items: [
+      { href: "/ai-opportunity-engine", label: "Opportunity Table", icon: Activity },
+      { href: "/board-report", label: "Top priorities", icon: FileText }
+    ]
+  },
+  {
+    label: "Regions",
+    items: [
+      { href: "/opportunity-map", label: "Mapa de Oportunidad", icon: Map },
+      { href: "/distribution-intelligence", label: "Cobertura", icon: Truck }
+    ]
+  },
+  {
+    label: "Products",
+    items: [{ href: "/product-margin", label: "Producto y Margen", icon: Package2 }]
+  },
+  {
+    label: "Marketing",
+    items: [{ href: "/marketing-intelligence", label: "Marketing", icon: AreaChart }]
+  }
+];
+
+export const navItems = navSections.flatMap((section) => section.items);
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -42,33 +82,38 @@ export function AppSidebar() {
           </div>
         </div>
 
-        <nav className="space-y-2">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const active = pathname === item.href;
+        <nav className="space-y-5">
+          {navSections.map((section) => (
+            <div key={section.label} className="space-y-2">
+              <p className="px-4 text-[11px] uppercase tracking-[0.18em] text-slate-500">{section.label}</p>
+              {section.items.map((item) => {
+                const Icon = item.icon;
+                const active = pathname === item.href;
 
-            return (
-              <a
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "group flex items-center gap-3 rounded-2xl border px-4 py-3 transition duration-300",
-                  active
-                    ? "border-accent/30 bg-accent/10 text-white shadow-[0_0_0_1px_rgba(90,215,196,0.1)]"
-                    : "border-transparent bg-transparent text-slate-400 hover:border-white/10 hover:bg-white/[0.04] hover:text-white"
-                )}
-              >
-                <Icon className={cn("h-4 w-4", active ? "text-accent" : "text-slate-500 group-hover:text-slate-200")} />
-                <span className="text-sm leading-5">{item.label}</span>
-              </a>
-            );
-          })}
+                return (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "group flex items-center gap-3 rounded-2xl border px-4 py-3 transition duration-300",
+                      active
+                        ? "border-accent/30 bg-accent/10 text-white shadow-[0_0_0_1px_rgba(90,215,196,0.1)]"
+                        : "border-transparent bg-transparent text-slate-400 hover:border-white/10 hover:bg-white/[0.04] hover:text-white"
+                    )}
+                  >
+                    <Icon className={cn("h-4 w-4", active ? "text-accent" : "text-slate-500 group-hover:text-slate-200")} />
+                    <span className="text-sm leading-5">{item.label}</span>
+                  </a>
+                );
+              })}
+            </div>
+          ))}
         </nav>
 
         <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-white/[0.06] to-white/[0.02] p-5">
-          <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Narrativa ejecutiva</p>
+          <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Start here</p>
           <p className="mt-3 text-sm leading-6 text-slate-200">
-            La plataforma conecta senales de marketing, ventas, distribucion y margen para priorizar expansion rentable.
+            Revisa oportunidades, impacto y watchlist antes de abrir detalle por region, producto o campana.
           </p>
         </div>
       </div>

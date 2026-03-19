@@ -1,12 +1,15 @@
 "use client";
 
-import type { ComponentType, ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ComponentType } from "react";
 import { ArrowDownWideNarrow, ArrowUpWideNarrow, TrendingDown, Zap } from "lucide-react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-import { ChartCard } from "@/components/common/chart-card";
+import { DetailPanel } from "@/components/common/detail-panel";
+import { MiniBar } from "@/components/common/mini-bar";
 import { PageHeader } from "@/components/common/page-header";
+import { SearchInput } from "@/components/common/search-input";
+import { StatusChip } from "@/components/common/status-chip";
+import { ChartCard } from "@/components/common/chart-card";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -19,14 +22,9 @@ type SortKey = "ytdRevenue" | "grossMargin" | "growth" | "contribution";
 export function ProductMarginPage() {
   const [sortKey, setSortKey] = useState<SortKey>("ytdRevenue");
   const [descending, setDescending] = useState(true);
-
-  const sortedProducts = useMemo(() => {
-    return [...dashboardData.products].sort((a, b) => {
-      const left = a[sortKey];
-      const right = b[sortKey];
-      return descending ? Number(right) - Number(left) : Number(left) - Number(right);
-    });
-  }, [descending, sortKey]);
+  const [query, setQuery] = useState("");
+  const [riskFilter, setRiskFilter] = useState<"Todos" | "Escalar" | "Subaprovechado" | "Presion">("Todos");
+  const [selected, setSelected] = useState<ProductMetric | null>(dashboardData.products[0] ?? null);
 
   const marginTrendData = useMemo(() => {
     const focusProducts = dashboardData.products.slice(0, 5);
@@ -43,6 +41,23 @@ export function ProductMarginPage() {
     );
   }, []);
 
+  const sortedProducts = useMemo(() => {
+    const value = query.trim().toLowerCase();
+
+    return [...dashboardData.products]
+      .filter((product) => {
+        const label = product.marginPressure ? "Presion" : product.underLeveraged ? "Subaprovechado" : "Escalar";
+        const matchesQuery = !value || `${product.family} ${product.keyChannel}`.toLowerCase().includes(value);
+        const matchesRisk = riskFilter === "Todos" || label === riskFilter;
+        return matchesQuery && matchesRisk;
+      })
+      .sort((a, b) => {
+        const left = a[sortKey];
+        const right = b[sortKey];
+        return descending ? Number(right) - Number(left) : Number(left) - Number(right);
+      });
+  }, [descending, query, riskFilter, sortKey]);
+
   const setSort = (nextKey: SortKey) => {
     if (sortKey === nextKey) {
       setDescending((current) => !current);
@@ -55,147 +70,138 @@ export function ProductMarginPage() {
   return (
     <div className="space-y-8">
       <PageHeader
-        eyebrow="Producto y Margen"
-        title="Portafolio, rentabilidad y palancas por familia"
-        description="Vista para identificar que familias financian el crecimiento, cuales estan subaprovechadas y donde la presion promocional empieza a destruir valor."
+        eyebrow="Products"
+        title="Product Intelligence Table"
+        description="Busca, filtra y abre detalle por producto para entender revenue, margin, growth y riesgo."
       />
 
       <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-        <ChartCard
-          title="Matriz de desempeno del portafolio"
-          description="Cada familia combina volumen, crecimiento, margen y contribution share para ayudar a decidir donde escalar y donde defender."
-        >
-          <div className="grid gap-4 md:grid-cols-2">
-            {dashboardData.products.map((product) => (
-              <div key={product.family} className="rounded-3xl border border-white/10 bg-[#09101F] p-5 transition duration-300 hover:-translate-y-1">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="font-display text-xl text-white">{product.family}</p>
-                    <p className="mt-2 text-sm text-slate-400">{formatChannelLabel(product.keyChannel)}</p>
-                  </div>
-                  <Badge variant={product.marginPressure ? "rose" : product.underLeveraged ? "amber" : "accent"}>
-                    {product.marginPressure ? "Presion" : product.underLeveraged ? "Subaprovechado" : "Escalar"}
-                  </Badge>
-                </div>
-                <div className="mt-5 grid grid-cols-2 gap-3">
-                  <div className="rounded-2xl bg-white/[0.03] p-3">
-                    <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Ingresos</p>
-                    <p className="mt-2 text-lg text-white">{formatCompactCurrency(product.ytdRevenue)}</p>
-                  </div>
-                  <div className="rounded-2xl bg-white/[0.03] p-3">
-                    <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Margen</p>
-                    <p className="mt-2 text-lg text-white">{formatPercent(product.grossMargin)}</p>
-                  </div>
-                  <div className="rounded-2xl bg-white/[0.03] p-3">
-                    <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Crecimiento</p>
-                    <p className="mt-2 text-lg text-white">{formatPercent(product.growth)}</p>
-                  </div>
-                  <div className="rounded-2xl bg-white/[0.03] p-3">
-                    <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Aporte</p>
-                    <p className="mt-2 text-lg text-white">{formatPercent(product.contribution)}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </ChartCard>
-
-        <ChartCard title="Tendencia de margen por familia" description="Foco sobre las familias con deterioro secuencial y las que aun tienen aire para premiumizacion.">
-          <div className="h-[440px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart margin={{ left: -10, right: 10 }} data={marginTrendData}>
-                <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
-                <XAxis dataKey="month" stroke="#8E9AB7" tickLine={false} axisLine={false} />
-                <YAxis stroke="#8E9AB7" tickLine={false} axisLine={false} />
-                <Tooltip
-                  contentStyle={{ background: "#09101f", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 18 }}
-                />
-                {dashboardData.products.slice(0, 5).map((product, index) => (
-                  <Line
-                    key={product.family}
-                    dataKey={product.family}
-                    name={product.family}
-                    type="monotone"
-                    stroke={["#5AD7C4", "#5E8BFF", "#F8B84E", "#F27EA9", "#9FE870"][index]}
-                    strokeWidth={index === 0 ? 3 : 2}
-                    dot={false}
-                  />
-                ))}
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </ChartCard>
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
         <Card className="border-white/10 bg-white/[0.04]">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Tabla de desempeno</CardTitle>
-              <p className="mt-2 text-sm text-slate-400">Ordena por ingresos, margen, crecimiento o aporte relativo.</p>
+          <CardHeader className="gap-4">
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+              <CardTitle>Product Intelligence Table</CardTitle>
+              <div className="flex flex-wrap gap-2">
+                {["Todos", "Escalar", "Subaprovechado", "Presion"].map((option) => (
+                  <button
+                    key={option}
+                    onClick={() => setRiskFilter(option as "Todos" | "Escalar" | "Subaprovechado" | "Presion")}
+                    className={`rounded-full border px-3 py-1.5 text-xs uppercase tracking-[0.16em] transition ${
+                      riskFilter === option
+                        ? "border-accent/30 bg-accent/10 text-accent"
+                        : "border-white/10 bg-white/[0.03] text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
             </div>
-            <Badge variant="default">{descending ? "Descendente" : "Ascendente"}</Badge>
+            <SearchInput value={query} onChange={setQuery} placeholder="Buscar producto o linea..." />
           </CardHeader>
           <CardContent className="overflow-x-auto scroll-clean">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Familia</TableHead>
-                  <SortableHead label="Ventas" active={sortKey === "ytdRevenue"} onClick={() => setSort("ytdRevenue")} />
-                  <SortableHead label="Margen" active={sortKey === "grossMargin"} onClick={() => setSort("grossMargin")} />
-                  <SortableHead label="Crecimiento" active={sortKey === "growth"} onClick={() => setSort("growth")} />
+                  <TableHead>Producto</TableHead>
+                  <SortableHead label="Revenue" active={sortKey === "ytdRevenue"} onClick={() => setSort("ytdRevenue")} />
+                  <SortableHead label="Margin" active={sortKey === "grossMargin"} onClick={() => setSort("grossMargin")} />
+                  <SortableHead label="Growth" active={sortKey === "growth"} onClick={() => setSort("growth")} />
                   <SortableHead label="Aporte" active={sortKey === "contribution"} onClick={() => setSort("contribution")} />
+                  <TableHead>Riesgo</TableHead>
                   <TableHead>Recomendacion</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sortedProducts.map((product) => (
-                  <TableRow key={product.family}>
-                    <TableCell className="font-medium text-white">{product.family}</TableCell>
-                    <TableCell>{formatCompactCurrency(product.ytdRevenue)}</TableCell>
-                    <TableCell>{formatPercent(product.grossMargin)}</TableCell>
-                    <TableCell>{formatPercent(product.growth)}</TableCell>
-                    <TableCell>{formatPercent(product.contribution)}</TableCell>
-                    <TableCell className="max-w-[340px] text-slate-300">{product.recommendedAction}</TableCell>
-                  </TableRow>
-                ))}
+                {sortedProducts.map((product) => {
+                  const label = product.marginPressure ? "Presion" : product.underLeveraged ? "Subaprovechado" : "Escalar";
+                  return (
+                    <TableRow key={product.family} className="cursor-pointer" onClick={() => setSelected(product)}>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium text-white">{product.family}</p>
+                          <p className="text-xs text-slate-500">{formatChannelLabel(product.keyChannel)}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell>{formatCompactCurrency(product.ytdRevenue)}</TableCell>
+                      <TableCell>
+                        <div className="space-y-2">
+                          <span>{formatPercent(product.grossMargin)}</span>
+                          <MiniBar value={product.grossMargin * 2.1} tone={product.marginPressure ? "rose" : "accent"} />
+                        </div>
+                      </TableCell>
+                      <TableCell>{formatPercent(product.growth)}</TableCell>
+                      <TableCell>{formatPercent(product.contribution)}</TableCell>
+                      <TableCell>
+                        <StatusChip label={label} />
+                      </TableCell>
+                      <TableCell className="max-w-[320px] text-slate-300">{product.recommendedAction}</TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </CardContent>
         </Card>
 
         <div className="grid gap-4">
-          <InsightStack
-            title="Productos subaprovechados"
+          <ChartCard title="Margin trend" description="Vista rapida para detectar deterioro secuencial.">
+            <div className="h-[280px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart margin={{ left: -10, right: 10 }} data={marginTrendData}>
+                  <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
+                  <XAxis dataKey="month" stroke="#8E9AB7" tickLine={false} axisLine={false} />
+                  <YAxis stroke="#8E9AB7" tickLine={false} axisLine={false} />
+                  <Tooltip contentStyle={{ background: "#09101f", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 18 }} />
+                  {dashboardData.products.slice(0, 5).map((product, index) => (
+                    <Line
+                      key={product.family}
+                      dataKey={product.family}
+                      name={product.family}
+                      type="monotone"
+                      stroke={["#5AD7C4", "#5E8BFF", "#F8B84E", "#F27EA9", "#9FE870"][index]}
+                      strokeWidth={index === 0 ? 3 : 2}
+                      dot={false}
+                    />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </ChartCard>
+
+          <QuickList
+            title="Highest impact"
             icon={Zap}
-            tone="amber"
-            items={dashboardData.products.filter((product) => product.underLeveraged)}
-            render={(product) => (
-              <>
-                <p className="font-medium text-white">{product.family}</p>
-                <p className="mt-2 text-sm leading-6 text-slate-300">
-                  Margen de {formatPercent(product.grossMargin)} con crecimiento aun por debajo del potencial. Conviene ampliar
-                  presencia en {formatChannelLabel(product.keyChannel)}.
-                </p>
-              </>
-            )}
+            items={dashboardData.products.filter((item) => !item.marginPressure).slice(0, 3)}
+            tone="accent"
           />
-          <InsightStack
-            title="Alertas de presion marginal"
+          <QuickList
+            title="Watchlist"
             icon={TrendingDown}
+            items={dashboardData.products.filter((item) => item.marginPressure).slice(0, 3)}
             tone="rose"
-            items={dashboardData.products.filter((product) => product.marginPressure)}
-            render={(product) => (
-              <>
-                <p className="font-medium text-white">{product.family}</p>
-                <p className="mt-2 text-sm leading-6 text-slate-300">
-                  La secuencia reciente de margen exige corregir precio, promocion o configuracion de portafolio.
-                </p>
-              </>
-            )}
           />
         </div>
       </section>
+
+      <DetailPanel
+        open={Boolean(selected)}
+        onClose={() => setSelected(null)}
+        title={selected?.family ?? "Producto"}
+        subtitle={selected ? formatChannelLabel(selected.keyChannel) : ""}
+      >
+        {selected ? (
+          <div className="space-y-4">
+            <Metric label="Revenue" value={formatCompactCurrency(selected.ytdRevenue)} />
+            <Metric label="Margin" value={formatPercent(selected.grossMargin)} />
+            <Metric label="Growth" value={formatPercent(selected.growth)} />
+            <Metric label="Contribution" value={formatPercent(selected.contribution)} />
+            <div className="rounded-2xl border border-white/10 bg-[#09101F] p-4">
+              <p className="text-[11px] uppercase tracking-[0.16em] text-accent">Recommendation</p>
+              <p className="mt-2 text-sm leading-7 text-slate-200">{selected.recommendedAction}</p>
+            </div>
+          </div>
+        ) : null}
+      </DetailPanel>
     </div>
   );
 }
@@ -211,23 +217,21 @@ function SortableHead({ label, active, onClick }: { label: string; active: boole
   );
 }
 
-function InsightStack<T extends ProductMetric>({
+function QuickList({
   title,
   icon: Icon,
-  tone,
   items,
-  render
+  tone
 }: {
   title: string;
   icon: ComponentType<{ className?: string }>;
-  tone: "amber" | "rose";
-  items: T[];
-  render: (item: T) => ReactNode;
+  items: ProductMetric[];
+  tone: "accent" | "rose";
 }) {
   return (
     <Card className="border-white/10 bg-white/[0.04]">
       <CardHeader>
-        <div className={`inline-flex items-center gap-2 text-xs uppercase tracking-[0.22em] ${tone === "amber" ? "text-amber-200" : "text-rose-200"}`}>
+        <div className={`inline-flex items-center gap-2 text-xs uppercase tracking-[0.22em] ${tone === "accent" ? "text-accent" : "text-rose-200"}`}>
           <Icon className="h-4 w-4" />
           {title}
         </div>
@@ -235,10 +239,23 @@ function InsightStack<T extends ProductMetric>({
       <CardContent className="space-y-3">
         {items.map((item) => (
           <div key={item.family} className="rounded-2xl border border-white/10 bg-[#09101F] p-4">
-            {render(item)}
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-sm text-white">{item.family}</p>
+              <StatusChip label={item.marginPressure ? "Presion" : "Escalar"} />
+            </div>
+            <p className="mt-2 text-sm text-slate-400">{item.recommendedAction}</p>
           </div>
         ))}
       </CardContent>
     </Card>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-[#09101F] p-4">
+      <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">{label}</p>
+      <p className="mt-2 text-2xl text-white">{value}</p>
+    </div>
   );
 }

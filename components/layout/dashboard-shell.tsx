@@ -1,12 +1,62 @@
-import { ReactNode } from "react";
+"use client";
+
+import { ReactNode, useMemo, useState } from "react";
 import Link from "next/link";
+import type { Route } from "next";
+import { useRouter } from "next/navigation";
 import { CalendarDays, ChevronRight, Download } from "lucide-react";
 
 import { AppSidebar, MobileNav } from "@/components/layout/app-sidebar";
 import { PrototypeNote } from "@/components/common/prototype-note";
+import { SearchInput } from "@/components/common/search-input";
 import { buttonVariants } from "@/components/ui/button";
+import { dashboardData } from "@/lib/mock-data";
+
+type SearchResult = {
+  id: string;
+  label: string;
+  meta: string;
+  href: Route;
+};
 
 export function DashboardShell({ children }: { children: ReactNode }) {
+  const router = useRouter();
+  const [query, setQuery] = useState("");
+
+  const results = useMemo(() => {
+    const value = query.trim().toLowerCase();
+    if (!value) return [];
+
+    const entities: SearchResult[] = [
+      ...dashboardData.products.map((item) => ({
+        id: item.family,
+        label: item.family,
+        meta: "Producto",
+        href: "/product-margin" as Route
+      })),
+      ...dashboardData.regions.map((item) => ({
+        id: item.region,
+        label: item.region,
+        meta: "Region",
+        href: "/opportunity-map" as Route
+      })),
+      ...dashboardData.campaigns.map((item) => ({
+        id: item.id,
+        label: item.name,
+        meta: "Campana",
+        href: "/marketing-intelligence" as Route
+      })),
+      ...dashboardData.opportunities.map((item) => ({
+        id: item.id,
+        label: item.title,
+        meta: "Oportunidad",
+        href: "/ai-opportunity-engine" as Route
+      }))
+    ];
+
+    return entities.filter((item) => `${item.label} ${item.meta}`.toLowerCase().includes(value)).slice(0, 6);
+  }, [query]);
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="mx-auto flex min-h-screen max-w-[1720px]">
@@ -26,7 +76,35 @@ export function DashboardShell({ children }: { children: ReactNode }) {
                   Designed for enterprise commercial decision-making
                 </p>
               </div>
-              <div className="flex flex-wrap items-center gap-3">
+              <div className="flex flex-col gap-3 lg:min-w-[430px]">
+                <div className="relative">
+                  <SearchInput
+                    value={query}
+                    onChange={setQuery}
+                    placeholder="Buscar producto, region, campana u oportunidad..."
+                  />
+                  {results.length > 0 ? (
+                    <div className="absolute top-[calc(100%+0.5rem)] z-30 w-full rounded-3xl border border-white/10 bg-[#08101F]/95 p-2 shadow-panel backdrop-blur-xl">
+                      {results.map((item) => (
+                        <button
+                          key={item.id}
+                          onClick={() => {
+                            setQuery("");
+                            router.push(item.href);
+                          }}
+                          className="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left transition hover:bg-white/[0.06]"
+                        >
+                          <div>
+                            <p className="text-sm text-white">{item.label}</p>
+                            <p className="text-xs uppercase tracking-[0.16em] text-slate-500">{item.meta}</p>
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-slate-500" />
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
                 <Link href="/api/report" className={buttonVariants("secondary")}>
                   <span className="inline-flex items-center gap-2">
                     <Download className="h-4 w-4" />
@@ -39,6 +117,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
                     <ChevronRight className="h-4 w-4" />
                   </span>
                 </Link>
+                </div>
               </div>
             </div>
             <div className="mt-4">
