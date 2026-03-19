@@ -10,7 +10,7 @@ export function PrototypeNote({ compact = false }: { compact?: boolean }) {
       }
     >
       <span className="font-medium uppercase tracking-[0.18em] text-slate-300">{dashboardData.prototypeNote.label}</span>
-      <span>{dashboardData.prototypeNote.statement}</span>
+      <span className="text-slate-400">{dashboardData.prototypeNote.statement}</span>
     </div>
   );
 }

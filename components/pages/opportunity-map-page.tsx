@@ -95,7 +95,7 @@ export function OpportunityMapPage() {
               <MetricTile label="Salud distribuidor" value={`${selected.distributorHealth}/100`} />
             </div>
             <div className="rounded-3xl border border-accent/20 bg-accent/10 p-5">
-              <p className="text-xs uppercase tracking-[0.18em] text-accent">Lectura IA</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-accent">Lectura estrategica</p>
               <p className="mt-3 text-sm leading-7 text-slate-100">{selected.recommendation}</p>
             </div>
             <div className="grid gap-3">

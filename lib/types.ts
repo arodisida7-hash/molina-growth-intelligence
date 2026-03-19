@@ -145,7 +145,8 @@ export interface ConnectedSource {
 export interface StrategicOpportunitySummary {
   region: RegionName;
   product: ProductFamily | "Linea Natural";
-  hypothesis: string;
+  insight: string;
+  action: string;
 }
 
 export interface ImpactPotential {
@@ -181,6 +182,7 @@ export interface DashboardData {
     label: string;
     statement: string;
     supporting: string;
+    microcopy: string;
   };
   prototypeNote: {
     label: string;

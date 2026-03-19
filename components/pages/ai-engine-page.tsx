@@ -18,7 +18,7 @@ export function AiOpportunityEnginePage() {
   return (
     <div className="space-y-8">
       <PageHeader
-        eyebrow="Motor de Oportunidades IA"
+        eyebrow="Motor de Oportunidades"
         title="Motor de deteccion de oportunidades y riesgos"
         description="Capa de inteligencia que cruza senales de CRM, SAP, marketing y distribucion para priorizar expansion, margen y decisiones comerciales."
       />

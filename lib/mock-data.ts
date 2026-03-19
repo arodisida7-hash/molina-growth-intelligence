@@ -561,24 +561,27 @@ const strategicOpportunities: StrategicOpportunitySummary[] = [
   {
     region: "Monterrey",
     product: "Extracto Natural",
-    hypothesis: "Oportunidad de expansion premium en food service con mejor ticket y margen incremental."
+    insight: "Alta conversion digital y baja penetracion retail para una plaza con demanda sofisticada.",
+    action: "Expandir distribucion premium y activar cuentas clave de food service."
   },
   {
     region: "Cancun",
     product: "Linea Natural",
-    hypothesis: "Oportunidad de aceleracion food service si se corrige cobertura y frecuencia de abastecimiento."
+    insight: "La demanda food service acelera mas rapido que la cobertura actual y abre una ventana clara de expansion.",
+    action: "Ajustar frecuencia de abasto y priorizar linea natural en clientes ancla."
   },
   {
     region: "Queretaro",
     product: "Cocoa",
-    hypothesis: "Oportunidad de crecimiento digital para reposteria con contenido de conversion y bajo riesgo logistico."
+    insight: "El mix de reposteria digital muestra traccion, bajo riesgo logistico y espacio para ganar share.",
+    action: "Escalar pauta digital y surtido de Cocoa para crecimiento en reposteria."
   }
 ];
 
 const impactPotential: ImpactPotential = {
-  salesLift: "+6% a +9% ventas regionales",
-  marginLift: "+2% a +3% margen promedio",
-  marketingLift: "+10% a +12% eficiencia de marketing",
+  salesLift: "+6-9% Revenue Uplift",
+  marginLift: "+2-3% Margin Optimization",
+  marketingLift: "+10-12% Marketing Efficiency",
   note: "Estimacion exploratoria basada en senales comerciales simuladas."
 };
 
@@ -710,13 +713,14 @@ export const dashboardData: DashboardData = {
   impactPotential,
   enterprisePositioning: {
     label: "Disenado para empresa madura",
-    statement: "Construido para potenciar CRM, SAP y BI con una capa de inteligencia orientada a decisiones.",
+    statement: "Designed to work with CRM, SAP and BI systems",
     supporting:
-      "Conecta fuentes actuales, acelera lectura estrategica y ayuda a direccion a priorizar expansion, margen y cobertura sin reemplazar sistemas existentes."
+      "Conecta fuentes actuales, acelera lectura estrategica y ayuda a direccion a priorizar expansion, margen y cobertura sin reemplazar sistemas existentes.",
+    microcopy: "Designed for enterprise commercial decision-making"
   },
   prototypeNote: {
-    label: "Prototype Concept",
-    statement: "Exploratory Intelligence Layer for Commercial Decision Support"
+    label: "Prototype Concept - Molina Growth Intelligence",
+    statement: "Exploratory intelligence layer for enterprise decision-making"
   }
 };
 

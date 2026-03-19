@@ -22,6 +22,9 @@ export function DashboardShell({ children }: { children: ReactNode }) {
                 <p className="text-sm text-slate-300">
                   Capa de inteligencia comercial para potenciar CRM, SAP y BI con decisiones de expansion, margen y cobertura.
                 </p>
+                <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                  Designed for enterprise commercial decision-making
+                </p>
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <Link href="/api/report" className={buttonVariants("secondary")}>
@@ -46,7 +49,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
           <footer className="border-t border-white/10 px-5 py-4 md:px-8 xl:px-10">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <p className="text-sm text-slate-500">
-                Construido para integrarse con la infraestructura comercial y analitica existente.
+                Designed to work with CRM, SAP and BI systems.
               </p>
               <PrototypeNote compact />
             </div>

@@ -17,13 +17,13 @@ export function MetricCard({
   const positive = (delta ?? 0) >= 0;
 
   return (
-    <Card className="group overflow-hidden border-white/10 bg-white/[0.04] hover:-translate-y-1 hover:border-white/15">
+    <Card className="group overflow-hidden border-white/10 bg-white/[0.03] transition duration-300 hover:-translate-y-1 hover:border-white/15 hover:bg-white/[0.05]">
       <CardHeader className="pb-3">
-        <CardTitle className="text-sm font-medium uppercase tracking-[0.16em] text-slate-400">{title}</CardTitle>
+        <CardTitle className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">{title}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex items-center justify-between gap-4">
-          <div className="font-display text-3xl text-white">{value}</div>
+          <div className="font-display text-4xl tracking-tight text-white">{value}</div>
           {typeof delta === "number" ? (
             <div
               className={cn(
@@ -36,7 +36,7 @@ export function MetricCard({
             </div>
           ) : null}
         </div>
-        <p className="text-sm leading-6 text-slate-300">{detail}</p>
+        <p className="text-sm leading-6 text-slate-400">{detail}</p>
       </CardContent>
     </Card>
   );

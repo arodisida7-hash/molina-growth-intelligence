@@ -1,15 +1,11 @@
 "use client";
 
-import type { Route } from "next";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Activity,
   AreaChart,
-  Bot,
   FileText,
   LayoutDashboard,
-  LucideIcon,
   Map,
   Package2,
   Truck
@@ -23,9 +19,9 @@ export const navItems = [
   { href: "/opportunity-map", label: "Mapa de Oportunidad", icon: Map },
   { href: "/marketing-intelligence", label: "Inteligencia de Marketing", icon: AreaChart },
   { href: "/distribution-intelligence", label: "Inteligencia de Distribucion", icon: Truck },
-  { href: "/ai-opportunity-engine", label: "Motor de Oportunidades IA", icon: Bot },
+  { href: "/ai-opportunity-engine", label: "Motor de Oportunidades", icon: Activity },
   { href: "/board-report", label: "Reporte de Consejo", icon: FileText }
-] satisfies Array<{ href: Route; label: string; icon: LucideIcon }>;
+] as const;
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -52,7 +48,7 @@ export function AppSidebar() {
             const active = pathname === item.href;
 
             return (
-              <Link
+              <a
                 key={item.href}
                 href={item.href}
                 className={cn(
@@ -64,7 +60,7 @@ export function AppSidebar() {
               >
                 <Icon className={cn("h-4 w-4", active ? "text-accent" : "text-slate-500 group-hover:text-slate-200")} />
                 <span className="text-sm leading-5">{item.label}</span>
-              </Link>
+              </a>
             );
           })}
         </nav>
@@ -90,7 +86,7 @@ export function MobileNav() {
         const active = pathname === item.href;
 
         return (
-          <Link
+          <a
             key={item.href}
             href={item.href}
             className={cn(
@@ -102,7 +98,7 @@ export function MobileNav() {
           >
             <Icon className="h-4 w-4" />
             {item.label}
-          </Link>
+          </a>
         );
       })}
     </div>
