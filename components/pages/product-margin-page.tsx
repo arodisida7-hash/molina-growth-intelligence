@@ -76,28 +76,34 @@ export function ProductMarginPage() {
       />
 
       <section className="dashboard-grid">
+        <div className="col-span-12 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+          <SearchInput value={query} onChange={setQuery} placeholder="Buscar producto o linea..." className="xl:max-w-[460px]" />
+          <div className="flex flex-wrap gap-2">
+            {["Todos", "Escalar", "Subaprovechado", "Presion"].map((option) => (
+              <button
+                key={option}
+                onClick={() => setRiskFilter(option as "Todos" | "Escalar" | "Subaprovechado" | "Presion")}
+                className={`rounded-full border px-3 py-1.5 text-xs uppercase tracking-[0.16em] transition ${
+                  riskFilter === option
+                    ? "border-accent/30 bg-accent/10 text-accent"
+                    : "border-white/10 bg-white/[0.03] text-slate-400 hover:text-white"
+                }`}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="dashboard-grid">
         <div className="col-span-12 xl:col-span-8">
         <Card className="border-white/10 bg-white/[0.04]">
           <CardHeader className="gap-4">
             <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
               <CardTitle>Product Intelligence Table</CardTitle>
-              <div className="flex flex-wrap gap-2">
-                {["Todos", "Escalar", "Subaprovechado", "Presion"].map((option) => (
-                  <button
-                    key={option}
-                    onClick={() => setRiskFilter(option as "Todos" | "Escalar" | "Subaprovechado" | "Presion")}
-                    className={`rounded-full border px-3 py-1.5 text-xs uppercase tracking-[0.16em] transition ${
-                      riskFilter === option
-                        ? "border-accent/30 bg-accent/10 text-accent"
-                        : "border-white/10 bg-white/[0.03] text-slate-400 hover:text-white"
-                    }`}
-                  >
-                    {option}
-                  </button>
-                ))}
-              </div>
+              <StatusChip label={`${sortedProducts.length} productos`} />
             </div>
-            <SearchInput value={query} onChange={setQuery} placeholder="Buscar producto o linea..." />
           </CardHeader>
           <CardContent className="overflow-x-auto scroll-clean">
             <Table>

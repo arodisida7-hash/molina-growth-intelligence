@@ -146,7 +146,9 @@ export function OverviewPage() {
                       <p className="text-sm font-medium text-white">{item.region}</p>
                       <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">{item.product}</p>
                     </div>
-                    <StatusChip label={item.status} />
+                    <div className="shrink-0">
+                      <StatusChip label={item.status} />
+                    </div>
                   </div>
                   <div className="mt-5 grid grid-cols-2 gap-3">
                     <MetricChip label="Canal" value={item.channel} />
@@ -162,7 +164,7 @@ export function OverviewPage() {
                     </div>
                     <MiniBar value={item.opportunityScore} className="mt-3" />
                   </div>
-                  <p className="mt-5 text-sm leading-7 text-slate-300">{item.action}</p>
+                  <p className="clamp-3 mt-5 text-sm leading-7 text-slate-300">{item.action}</p>
                   <div className="mt-5 inline-flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-accent">
                     Ver lectura
                     <ArrowRight className="h-4 w-4" />

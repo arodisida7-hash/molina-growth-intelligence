@@ -108,13 +108,6 @@ export function AppSidebar() {
             </div>
           ))}
         </nav>
-
-        <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-white/[0.06] to-white/[0.02] p-5">
-          <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Start here</p>
-          <p className="mt-3 text-sm leading-6 text-slate-200">
-            Revisa oportunidades, impacto y watchlist antes de abrir detalle por region, producto o campana.
-          </p>
-        </div>
       </div>
     </aside>
   );

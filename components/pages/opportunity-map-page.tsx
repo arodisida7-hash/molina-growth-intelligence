@@ -213,8 +213,10 @@ function ScoreLine({ label, value }: { label: string; value: number }) {
 function MetricChip({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-2xl bg-white/[0.04] px-3 py-3">
-      <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">{label}</p>
-      <p className="mt-2 text-lg text-white">{value}</p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[10px] uppercase tracking-[0.08em] text-slate-500">{label}</p>
+        <p className="text-base text-white">{value}</p>
+      </div>
     </div>
   );
 }

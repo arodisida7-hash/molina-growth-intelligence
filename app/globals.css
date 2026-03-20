@@ -20,8 +20,8 @@ body {
   background-image:
     radial-gradient(circle at top left, rgba(90, 215, 196, 0.18), transparent 22%),
     radial-gradient(circle at top right, rgba(94, 139, 255, 0.18), transparent 24%),
-    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
     linear-gradient(180deg, rgba(8, 11, 24, 1), rgba(4, 6, 16, 1));
   background-size: auto, auto, 72px 72px, 72px 72px, auto;
   background-position: center, center, center, center, center;
@@ -78,6 +78,20 @@ a {
 
 .dashboard-card {
   border-radius: 1.75rem;
+}
+
+.clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .scroll-clean::-webkit-scrollbar {

@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import { CalendarDays, ChevronRight, Download } from "lucide-react";
 
 import { AppSidebar, MobileNav } from "@/components/layout/app-sidebar";
-import { PrototypeNote } from "@/components/common/prototype-note";
 import { SearchInput } from "@/components/common/search-input";
 import { buttonVariants } from "@/components/ui/button";
 import { dashboardData } from "@/lib/mock-data";
@@ -128,11 +127,8 @@ export function DashboardShell({ children }: { children: ReactNode }) {
           </main>
           <footer className="border-t border-white/10 px-5 py-4 md:px-8 xl:px-10">
             <div className="dashboard-container">
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                <p className="text-sm text-slate-500">
-                  Designed to work with CRM, SAP and BI systems.
-                </p>
-                <PrototypeNote compact />
+              <div className="flex items-center justify-end">
+                <p className="text-sm text-slate-500">Designed to work with CRM, SAP and BI systems.</p>
               </div>
             </div>
           </footer>

@@ -70,6 +70,24 @@ export function MarketingIntelligencePage() {
       />
 
       <section className="dashboard-grid">
+        <div className="col-span-12 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+          <SearchInput value={query} onChange={setQuery} placeholder="Buscar campana, canal o region..." className="xl:max-w-[460px]" />
+          <div className="flex flex-wrap gap-2">
+            {["Todos", "Escalar", "Optimizar"].map((option) => (
+              <button
+                key={option}
+                onClick={() => setStatus(option as CampaignStatus)}
+                className={`rounded-full border px-3 py-1.5 text-xs uppercase tracking-[0.16em] transition ${
+                  status === option
+                    ? "border-accent/30 bg-accent/10 text-accent"
+                    : "border-white/10 bg-white/[0.03] text-slate-400 hover:text-white"
+                }`}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="col-span-12 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MiniMetric title="ROAS" value="5.1x" detail="Portafolio" />
         <MiniMetric title="CAC" value="$190" detail="Promedio" />
@@ -84,23 +102,8 @@ export function MarketingIntelligencePage() {
           <CardHeader className="gap-4">
             <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
               <CardTitle>Marketing Performance Table</CardTitle>
-              <div className="flex flex-wrap gap-2">
-                {["Todos", "Escalar", "Optimizar"].map((option) => (
-                  <button
-                    key={option}
-                    onClick={() => setStatus(option as CampaignStatus)}
-                    className={`rounded-full border px-3 py-1.5 text-xs uppercase tracking-[0.16em] transition ${
-                      status === option
-                        ? "border-accent/30 bg-accent/10 text-accent"
-                        : "border-white/10 bg-white/[0.03] text-slate-400 hover:text-white"
-                    }`}
-                  >
-                    {option}
-                  </button>
-                ))}
-              </div>
+              <StatusChip label={`${rows.length} campanas`} />
             </div>
-            <SearchInput value={query} onChange={setQuery} placeholder="Buscar campana, canal o region..." />
           </CardHeader>
           <CardContent className="overflow-x-auto scroll-clean">
             <Table>
