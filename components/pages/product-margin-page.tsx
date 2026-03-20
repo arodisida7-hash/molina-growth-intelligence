@@ -42,8 +42,9 @@ export function ProductMarginPage() {
   }, [descending, filter, query, sortKey]);
 
   const selected = selectedFamily ? dashboardData.products.find((row) => row.family === selectedFamily) ?? null : null;
-  const marginTrend = dashboardData.products.slice(0, 4)[0].monthlyMarginTrend.map((point, index) =>
-    dashboardData.products.slice(0, 4).reduce<Record<string, string | number>>(
+  const trendProducts = (rows.length > 0 ? rows : dashboardData.products).slice(0, 4);
+  const marginTrend = trendProducts[0].monthlyMarginTrend.map((point, index) =>
+    trendProducts.reduce<Record<string, string | number>>(
       (acc, product) => {
         acc.mes = point.month;
         acc[product.family] = product.monthlyMarginTrend[index]?.margin ?? 0;
@@ -71,7 +72,42 @@ export function ProductMarginPage() {
         <MetricCard title="Subaprovechados" value={`${underLeveragedCount}`} detail="Con espacio para crecer" icon={TrendingDown} />
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+      <section>
+        <Card className="border-white/10 bg-white/[0.04]">
+          <CardHeader className="border-b border-white/10 pb-5">
+            <div className="flex items-center justify-between gap-4">
+              <CardTitle>Tendencia de margen</CardTitle>
+              <div className="rounded-full border border-white/10 bg-[#09101F] px-3 py-1.5 text-xs uppercase tracking-[0.16em] text-slate-400">
+                {trendProducts.length} líneas visibles
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="h-[280px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={marginTrend} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+                  <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
+                  <XAxis dataKey="mes" stroke="#8E9AB7" tickLine={false} axisLine={false} />
+                  <YAxis stroke="#8E9AB7" tickLine={false} axisLine={false} />
+                  <Tooltip contentStyle={{ background: "#09101f", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 18 }} />
+                  {trendProducts.map((product, index) => (
+                    <Line
+                      key={product.family}
+                      type="monotone"
+                      dataKey={product.family}
+                      stroke={["#5AD7C4", "#5E8BFF", "#F8B84E", "#F27EA9"][index]}
+                      strokeWidth={index === 0 ? 3 : 2}
+                      dot={false}
+                    />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+
+      <section>
         <Card className="border-white/10 bg-white/[0.04]">
           <CardHeader className="gap-4 border-b border-white/10 pb-5">
             <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
@@ -125,101 +161,51 @@ export function ProductMarginPage() {
             </div>
           </CardHeader>
           <CardContent className="overflow-x-auto scroll-clean pt-6">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Producto</TableHead>
-                  <TableHead>Línea</TableHead>
-                  <TableHead>Ingresos</TableHead>
-                  <TableHead>Margen</TableHead>
-                  <TableHead>Crecimiento</TableHead>
-                  <TableHead>Riesgo</TableHead>
-                  <TableHead>Recomendación</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((product) => {
-                  const status = product.marginPressure ? "Presión" : product.underLeveraged ? "Subaprovechado" : "Escalar";
+            {rows.length === 0 ? (
+              <div className="rounded-3xl border border-dashed border-white/10 bg-[#09101F] px-5 py-10 text-center text-sm text-slate-400">
+                No hay productos para el criterio buscado.
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Producto</TableHead>
+                    <TableHead>Línea</TableHead>
+                    <TableHead>Ingresos</TableHead>
+                    <TableHead>Margen</TableHead>
+                    <TableHead>Crecimiento</TableHead>
+                    <TableHead>Riesgo</TableHead>
+                    <TableHead>Recomendación</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rows.map((product) => {
+                    const status = product.marginPressure ? "Presión" : product.underLeveraged ? "Subaprovechado" : "Escalar";
 
-                  return (
-                    <TableRow key={product.family} className="cursor-pointer" onClick={() => setSelectedFamily(product.family)}>
-                      <TableCell className="font-medium text-white">{product.family}</TableCell>
-                      <TableCell>{formatChannelLabel(product.keyChannel)}</TableCell>
-                      <TableCell>{formatCompactCurrency(product.ytdRevenue)}</TableCell>
-                      <TableCell>
-                        <div className="space-y-2">
-                          <span>{formatPercent(product.grossMargin)}</span>
-                          <MiniBar value={Math.round(product.grossMargin * 2.1)} tone={status === "Presión" ? "rose" : "accent"} />
-                        </div>
-                      </TableCell>
-                      <TableCell>{formatPercent(product.growth)}</TableCell>
-                      <TableCell>
-                        <StatusChip label={status} />
-                      </TableCell>
-                      <TableCell className="max-w-[320px] text-slate-300">{product.recommendedAction}</TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                    return (
+                      <TableRow key={product.family} className="cursor-pointer" onClick={() => setSelectedFamily(product.family)}>
+                        <TableCell className="font-medium text-white">{product.family}</TableCell>
+                        <TableCell>{formatChannelLabel(product.keyChannel)}</TableCell>
+                        <TableCell>{formatCompactCurrency(product.ytdRevenue)}</TableCell>
+                        <TableCell>
+                          <div className="space-y-2">
+                            <span>{formatPercent(product.grossMargin)}</span>
+                            <MiniBar value={Math.round(product.grossMargin * 2.1)} tone={status === "Presión" ? "rose" : "accent"} />
+                          </div>
+                        </TableCell>
+                        <TableCell>{formatPercent(product.growth)}</TableCell>
+                        <TableCell>
+                          <StatusChip label={status} />
+                        </TableCell>
+                        <TableCell className="max-w-[320px] text-slate-300">{product.recommendedAction}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
-
-        <div className="grid gap-4">
-          <Card className="border-white/10 bg-white/[0.04]">
-            <CardHeader>
-              <CardTitle>Tendencia de margen</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[220px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={marginTrend} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-                    <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
-                    <XAxis dataKey="mes" stroke="#8E9AB7" tickLine={false} axisLine={false} />
-                    <YAxis stroke="#8E9AB7" tickLine={false} axisLine={false} />
-                    <Tooltip contentStyle={{ background: "#09101f", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 18 }} />
-                    {dashboardData.products.slice(0, 4).map((product, index) => (
-                      <Line
-                        key={product.family}
-                        type="monotone"
-                        dataKey={product.family}
-                        stroke={["#5AD7C4", "#5E8BFF", "#F8B84E", "#F27EA9"][index]}
-                        strokeWidth={index === 0 ? 3 : 2}
-                        dot={false}
-                      />
-                    ))}
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-white/10 bg-white/[0.04]">
-            <CardHeader>
-              <CardTitle>Prioridades de producto</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {dashboardData.products.slice(0, 3).map((product) => {
-                const status = product.marginPressure ? "Presión" : product.underLeveraged ? "Subaprovechado" : "Escalar";
-
-                return (
-                  <button
-                    key={product.family}
-                    onClick={() => setSelectedFamily(product.family)}
-                    className="w-full rounded-2xl border border-white/10 bg-[#09101F] p-4 text-left transition hover:border-white/20"
-                  >
-                    <div className="flex items-center justify-between gap-4">
-                      <p className="text-sm text-white">{product.family}</p>
-                      <StatusChip label={status} />
-                    </div>
-                    <p className="mt-2 text-xs uppercase tracking-[0.16em] text-slate-500">{formatChannelLabel(product.keyChannel)}</p>
-                    <p className="mt-3 text-sm text-slate-300">{product.recommendedAction}</p>
-                  </button>
-                );
-              })}
-            </CardContent>
-          </Card>
-        </div>
       </section>
 
       <DetailPanel

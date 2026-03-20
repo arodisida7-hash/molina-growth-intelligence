@@ -210,7 +210,7 @@ export function OverviewPage() {
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+      <section>
         <Card className="border-white/10 bg-white/[0.04]">
           <CardHeader className="border-b border-white/10 pb-5">
             <div className="flex items-center justify-between gap-4">
@@ -262,24 +262,30 @@ export function OverviewPage() {
             )}
           </CardContent>
         </Card>
+      </section>
 
+      <section>
         <Card className="border-white/10 bg-white/[0.04]">
           <CardHeader className="border-b border-white/10 pb-5">
-            <CardTitle>Detalle ejecutivo</CardTitle>
-            {selected ? <p className="text-sm text-slate-400">{selected.region} • {selected.product} • {selected.channel}</p> : null}
+            <div className="flex flex-col gap-2 xl:flex-row xl:items-center xl:justify-between">
+              <CardTitle>Detalle ejecutivo</CardTitle>
+              {selected ? <p className="text-sm text-slate-400">{selected.region} • {selected.product} • {selected.channel}</p> : null}
+            </div>
           </CardHeader>
           <CardContent className="space-y-4 pt-6">
             {selected ? (
               <>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-3 md:grid-cols-4">
                   <DecisionMetric label="Score" value={`${selected.score}`} />
                   <DecisionMetric label="Impacto" value={selected.impact} />
+                  <DecisionMetric label="Estado" value={selected.status} />
+                  <DecisionMetric label="Canal" value={selected.channel} />
                 </div>
                 <div className="rounded-3xl border border-accent/20 bg-accent/10 p-5">
                   <p className="text-xs uppercase tracking-[0.18em] text-accent">Acción sugerida</p>
                   <p className="mt-3 text-sm leading-7 text-slate-100">{selected.action}</p>
                 </div>
-                <div className="space-y-3">
+                <div className="grid gap-3 md:grid-cols-3">
                   {selected.why.map((item, index) => (
                     <div key={item} className="rounded-2xl border border-white/10 bg-[#09101F] px-4 py-4">
                       <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Señal {index + 1}</p>
