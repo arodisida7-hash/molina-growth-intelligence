@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { AlertTriangle, ArrowUpRight, BriefcaseBusiness, CircleDollarSign, Gauge, MapPinned } from "lucide-react";
+import { BriefcaseBusiness, CircleDollarSign, Gauge, MapPinned } from "lucide-react";
 
 import { MiniBar } from "@/components/common/mini-bar";
 import { PageHeader } from "@/components/common/page-header";
@@ -68,9 +68,9 @@ export function OverviewPage() {
     });
   }, [decisionRows, filter, query]);
 
-  const selected = filteredRows.find((row) => row.id === selectedId) ?? filteredRows[0] ?? decisionRows[0];
-  const topDecisions = decisionRows.slice(0, 3);
-  const riskRows = decisionRows.filter((row) => row.status === "Riesgo").slice(0, 3);
+  const selected = selectedId ? filteredRows.find((row) => row.id === selectedId) ?? null : filteredRows[0] ?? null;
+  const topDecisions = filteredRows.slice(0, 3);
+  const riskRows = filteredRows.filter((row) => row.status === "Riesgo").slice(0, 3);
   const regionsReady = dashboardData.regions.filter((region) => region.opportunityScore >= 80).length;
   const revenueAtRisk = dashboardData.opportunities
     .filter((item) => item.type === "Riesgo")
@@ -144,6 +144,11 @@ export function OverviewPage() {
             />
           </CardHeader>
           <CardContent className="grid gap-3 pt-6">
+            {topDecisions.length === 0 ? (
+              <div className="rounded-3xl border border-dashed border-white/10 bg-[#09101F] px-5 py-10 text-center text-sm text-slate-400">
+                Sin coincidencias para la búsqueda actual.
+              </div>
+            ) : null}
             {topDecisions.map((row) => {
               const active = selected?.id === row.id;
 
@@ -216,66 +221,78 @@ export function OverviewPage() {
             </div>
           </CardHeader>
           <CardContent className="overflow-x-auto scroll-clean pt-6">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Región</TableHead>
-                  <TableHead>Producto</TableHead>
-                  <TableHead>Canal</TableHead>
-                  <TableHead>Score</TableHead>
-                  <TableHead>Impacto</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Acción sugerida</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredRows.map((row) => (
-                  <TableRow key={row.id} className="cursor-pointer" onClick={() => setSelectedId(row.id)}>
-                    <TableCell className="font-medium text-white">{row.region}</TableCell>
-                    <TableCell>{row.product}</TableCell>
-                    <TableCell>{row.channel}</TableCell>
-                    <TableCell>
-                      <div className="space-y-2">
-                        <span>{row.score}</span>
-                        <MiniBar value={row.score} tone={row.status === "Riesgo" ? "rose" : "accent"} />
-                      </div>
-                    </TableCell>
-                    <TableCell>{row.impact}</TableCell>
-                    <TableCell>
-                      <StatusChip label={row.status} />
-                    </TableCell>
-                    <TableCell className="max-w-[340px] text-slate-300">{row.action}</TableCell>
+            {filteredRows.length === 0 ? (
+              <div className="rounded-3xl border border-dashed border-white/10 bg-[#09101F] px-5 py-10 text-center text-sm text-slate-400">
+                No hay oportunidades que coincidan con la región o criterio buscado.
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Región</TableHead>
+                    <TableHead>Producto</TableHead>
+                    <TableHead>Canal</TableHead>
+                    <TableHead>Score</TableHead>
+                    <TableHead>Impacto</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead>Acción sugerida</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredRows.map((row) => (
+                    <TableRow key={row.id} className="cursor-pointer" onClick={() => setSelectedId(row.id)}>
+                      <TableCell className="font-medium text-white">{row.region}</TableCell>
+                      <TableCell>{row.product}</TableCell>
+                      <TableCell>{row.channel}</TableCell>
+                      <TableCell>
+                        <div className="space-y-2">
+                          <span>{row.score}</span>
+                          <MiniBar value={row.score} tone={row.status === "Riesgo" ? "rose" : "accent"} />
+                        </div>
+                      </TableCell>
+                      <TableCell>{row.impact}</TableCell>
+                      <TableCell>
+                        <StatusChip label={row.status} />
+                      </TableCell>
+                      <TableCell className="max-w-[340px] text-slate-300">{row.action}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
 
         <Card className="border-white/10 bg-white/[0.04]">
           <CardHeader className="border-b border-white/10 pb-5">
             <CardTitle>Detalle ejecutivo</CardTitle>
-            <p className="text-sm text-slate-400">
-              {selected.region} • {selected.product} • {selected.channel}
-            </p>
+            {selected ? <p className="text-sm text-slate-400">{selected.region} • {selected.product} • {selected.channel}</p> : null}
           </CardHeader>
           <CardContent className="space-y-4 pt-6">
-            <div className="grid grid-cols-2 gap-3">
-              <DecisionMetric label="Score" value={`${selected.score}`} />
-              <DecisionMetric label="Impacto" value={selected.impact} />
-            </div>
-            <div className="rounded-3xl border border-accent/20 bg-accent/10 p-5">
-              <p className="text-xs uppercase tracking-[0.18em] text-accent">Acción sugerida</p>
-              <p className="mt-3 text-sm leading-7 text-slate-100">{selected.action}</p>
-            </div>
-            <div className="space-y-3">
-              {selected.why.map((item, index) => (
-                <div key={item} className="rounded-2xl border border-white/10 bg-[#09101F] px-4 py-4">
-                  <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Señal {index + 1}</p>
-                  <p className="mt-2 text-sm text-slate-300">{item}</p>
+            {selected ? (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <DecisionMetric label="Score" value={`${selected.score}`} />
+                  <DecisionMetric label="Impacto" value={selected.impact} />
                 </div>
-              ))}
-            </div>
+                <div className="rounded-3xl border border-accent/20 bg-accent/10 p-5">
+                  <p className="text-xs uppercase tracking-[0.18em] text-accent">Acción sugerida</p>
+                  <p className="mt-3 text-sm leading-7 text-slate-100">{selected.action}</p>
+                </div>
+                <div className="space-y-3">
+                  {selected.why.map((item, index) => (
+                    <div key={item} className="rounded-2xl border border-white/10 bg-[#09101F] px-4 py-4">
+                      <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Señal {index + 1}</p>
+                      <p className="mt-2 text-sm text-slate-300">{item}</p>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="rounded-3xl border border-dashed border-white/10 bg-[#09101F] px-5 py-10 text-center text-sm text-slate-400">
+                Ajusta la búsqueda o selecciona una fila para ver el detalle.
+              </div>
+            )}
           </CardContent>
         </Card>
       </section>
@@ -286,6 +303,11 @@ export function OverviewPage() {
             <CardTitle>Vigilancia</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
+            {riskRows.length === 0 ? (
+              <div className="rounded-3xl border border-dashed border-white/10 bg-[#09101F] px-5 py-8 text-center text-sm text-slate-400">
+                Sin riesgos visibles para los filtros actuales.
+              </div>
+            ) : null}
             {riskRows.map((row) => (
               <button
                 key={row.id}
@@ -352,10 +374,7 @@ function ExecutiveKpi({
           <Icon className="h-4 w-4" />
           {title}
         </div>
-        <div className="flex items-center justify-between gap-4">
-          <p className="font-display text-3xl text-white">{value}</p>
-          <ArrowUpRight className="h-5 w-5 text-accent" />
-        </div>
+        <p className="font-display text-3xl text-white">{value}</p>
         <p className="text-sm text-slate-400">{detail}</p>
       </CardContent>
     </Card>
