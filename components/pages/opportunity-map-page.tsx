@@ -15,12 +15,16 @@ import { formatChannelLabel, formatCompactCurrency, formatPercent } from "@/lib/
 const regionOrder = ["Tijuana", "Monterrey", "Leon", "Guadalajara", "Queretaro", "CDMX", "Merida", "Puebla", "Cancun"];
 
 export function OpportunityMapPage() {
-  const [selected, setSelected] = useState<RegionMetric | null>(null);
-  const [activationMessage, setActivationMessage] = useState("Explora la shortlist y activa una plaza con mejor balance entre demanda, margen y cobertura.");
-
   const orderedRegions = useMemo(
     () => regionOrder.map((name) => dashboardData.regions.find((region) => region.region === name)!).filter(Boolean),
     []
+  );
+  const defaultRegion = orderedRegions.find((region) => region.region === topRegionsByOpportunity[0]?.region) ?? orderedRegions[0] ?? null;
+  const [selected, setSelected] = useState<RegionMetric | null>(defaultRegion);
+  const [activationMessage, setActivationMessage] = useState(
+    defaultRegion
+      ? `Plan regional listo para ${defaultRegion.region}.`
+      : "Explora la shortlist y activa una plaza con mejor balance entre demanda, margen y cobertura."
   );
 
   return (
@@ -128,31 +132,7 @@ export function OpportunityMapPage() {
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </>
-            ) : (
-              <div className="space-y-3">
-                {topRegionsByOpportunity.slice(0, 3).map((region, index) => (
-                  <button
-                    key={region.region}
-                    onClick={() => {
-                      const target = orderedRegions.find((item) => item.region === region.region) ?? null;
-                      setSelected(target);
-                      if (target) {
-                        setActivationMessage(`Plan regional listo para ${target.region}.`);
-                      }
-                    }}
-                    className="flex w-full items-center justify-between rounded-2xl border border-white/10 bg-[#09101F] px-4 py-4 text-left transition hover:border-white/20"
-                  >
-                    <div>
-                      <p className="text-sm text-white">
-                        {index + 1}. {region.region}
-                      </p>
-                      <p className="mt-1 text-xs text-slate-400">{region.segment}</p>
-                    </div>
-                    <Badge variant="accent">{region.opportunityScore}</Badge>
-                  </button>
-                ))}
-              </div>
-            )}
+            ) : null}
             <div className="rounded-2xl border border-accent/20 bg-accent/10 px-4 py-3 text-sm text-slate-100">
               {activationMessage}
             </div>
