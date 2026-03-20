@@ -15,10 +15,9 @@ import {
   XAxis,
   YAxis
 } from "recharts";
-import { ArrowUpRight, BellRing, ChartColumnIncreasing, DatabaseZap, Search, Sparkles } from "lucide-react";
+import { ArrowRight, ArrowUpRight, BellRing, ChartColumnIncreasing, DatabaseZap, Sparkles } from "lucide-react";
 
 import { DetailPanel } from "@/components/common/detail-panel";
-import { ImpactStat } from "@/components/common/impact-stat";
 import { MiniBar } from "@/components/common/mini-bar";
 import { PageHeader } from "@/components/common/page-header";
 import { SearchInput } from "@/components/common/search-input";
@@ -82,8 +81,9 @@ export function OverviewPage() {
     });
   }, [opportunityRows, query, statusFilter]);
 
-  const selectedOpportunity = opportunityRows.find((row) => row.id === selectedOpportunityId) ?? null;
   const topPriorities = filteredRows.filter((row) => row.status === "Alta prioridad").slice(0, 3);
+  const selectedOpportunity =
+    opportunityRows.find((row) => row.id === selectedOpportunityId) ?? topPriorities[0] ?? filteredRows[0] ?? opportunityRows[0];
   const watchlist = dashboardData.alerts.slice(0, 3);
 
   return (
@@ -91,25 +91,17 @@ export function OverviewPage() {
       <PageHeader
         eyebrow="Overview"
         title="Executive Overview"
-        description="Prioridades, impacto y contexto en una sola vista."
-        aside={
-          <div className="flex flex-wrap gap-2">
-            {["CRM", "SAP", "BI"].map((item) => (
-              <div key={item} className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-xs uppercase tracking-[0.18em] text-slate-300">
-                {item}
-              </div>
-            ))}
-          </div>
-        }
+        description="Oportunidades priorizadas, impacto esperado y lectura comercial accionable."
       />
 
-      <section className="grid gap-4 xl:grid-cols-[1.25fr_0.75fr]">
+      <section className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
         <Card className="border-white/10 bg-white/[0.04]">
-          <CardHeader className="gap-4">
-            <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-              <div>
+          <CardHeader className="gap-4 border-b border-white/10 pb-5">
+            <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+              <div className="space-y-2">
                 <p className="text-xs uppercase tracking-[0.2em] text-accent">Start here</p>
-                <CardTitle className="mt-2 text-3xl">Top Commercial Opportunities</CardTitle>
+                <CardTitle className="text-3xl">Top Commercial Opportunities</CardTitle>
+                <p className="text-sm text-slate-400">Selecciona una oportunidad y actualiza el canvas de decisión.</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 {["Todos", "Alta prioridad", "Watchlist"].map((option) => (
@@ -134,82 +126,54 @@ export function OverviewPage() {
               className="max-w-full"
             />
           </CardHeader>
-          <CardContent className="grid gap-3 xl:grid-cols-3">
-            {topPriorities.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => setSelectedOpportunityId(item.id)}
-                className="rounded-3xl border border-white/10 bg-[#09101F] p-5 text-left transition hover:-translate-y-1 hover:border-white/20"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-medium text-white">{item.region}</p>
-                    <p className="mt-1 text-xs uppercase tracking-[0.16em] text-slate-500">{item.product}</p>
-                  </div>
-                  <StatusChip label={item.status} />
-                </div>
-                <div className="mt-4 space-y-3">
-                  <div>
-                    <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">{item.channel}</p>
-                    <div className="mt-2 flex items-center gap-2">
-                      <span className="text-xl text-white">{item.opportunityScore}</span>
-                      <ArrowUpRight className="h-4 w-4 text-emerald-300" />
+          <CardContent className="grid gap-4 pt-6 xl:grid-cols-[1fr_1fr_1fr]">
+            {topPriorities.map((item, index) => {
+              const active = selectedOpportunity.id === item.id;
+
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setSelectedOpportunityId(item.id)}
+                  className={`group relative overflow-hidden rounded-[28px] border p-5 text-left transition duration-300 ${
+                    active
+                      ? "border-accent/30 bg-gradient-to-br from-[#0B1528] via-[#0A1021] to-[#10243B] shadow-[0_20px_60px_rgba(0,0,0,0.35)]"
+                      : "border-white/10 bg-[#09101F] hover:-translate-y-1 hover:border-white/20"
+                  }`}
+                >
+                  <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent to-transparent opacity-70" />
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-white">{item.region}</p>
+                      <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">{item.product}</p>
                     </div>
-                    <MiniBar value={item.opportunityScore} className="mt-2" />
+                    <StatusChip label={item.status} />
                   </div>
-                  <p className="text-sm text-slate-300">{item.action}</p>
-                </div>
-              </button>
-            ))}
+                  <div className="mt-5 grid grid-cols-2 gap-3">
+                    <MetricChip label="Canal" value={item.channel} />
+                    <MetricChip label="Impacto" value={item.impactRange} />
+                  </div>
+                  <div className="mt-5 rounded-2xl bg-white/[0.04] px-4 py-3">
+                    <div className="flex items-center justify-between gap-4">
+                      <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Opportunity score</p>
+                      <div className="inline-flex items-center gap-1 text-sm text-white">
+                        {item.opportunityScore}
+                        <ArrowUpRight className="h-4 w-4 text-emerald-300" />
+                      </div>
+                    </div>
+                    <MiniBar value={item.opportunityScore} className="mt-3" />
+                  </div>
+                  <p className="mt-5 text-sm leading-7 text-slate-300">{item.action}</p>
+                  <div className="mt-5 inline-flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-accent">
+                    Ver lectura
+                    <ArrowRight className="h-4 w-4" />
+                  </div>
+                </button>
+              );
+            })}
           </CardContent>
         </Card>
 
-        <div className="grid gap-4">
-          <Card className="border-white/10 bg-white/[0.04]">
-            <CardHeader>
-              <CardTitle>Estimated Business Impact</CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-3">
-              <button onClick={() => setSelectedKpi("revenue")} className="text-left">
-                <ImpactStat value={dashboardData.impactPotential.salesLift} label="Revenue uplift" />
-              </button>
-              <button onClick={() => setSelectedKpi("margin")} className="text-left">
-                <ImpactStat value={dashboardData.impactPotential.marginLift} label="Margin optimization" />
-              </button>
-              <button onClick={() => setSelectedKpi("marketing")} className="text-left">
-                <ImpactStat value={dashboardData.impactPotential.marketingLift} label="Marketing efficiency" />
-              </button>
-            </CardContent>
-          </Card>
-
-          <Card className="border-white/10 bg-white/[0.04]">
-            <CardHeader className="flex flex-row items-center justify-between gap-4">
-              <CardTitle>Revenue Trend</CardTitle>
-              <Search className="h-4 w-4 text-slate-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="h-[190px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={dashboardData.months} margin={{ left: 0, right: 0 }}>
-                    <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
-                    <XAxis dataKey="month" stroke="#8E9AB7" tickLine={false} axisLine={false} />
-                    <YAxis
-                      stroke="#8E9AB7"
-                      tickLine={false}
-                      axisLine={false}
-                      tickFormatter={(value) => `${Math.round(value / 1000000)}M`}
-                    />
-                    <Tooltip
-                      contentStyle={{ background: "#09101f", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 18 }}
-                      formatter={(value) => [formatCompactCurrency(Number(value)), "Revenue"]}
-                    />
-                    <Line type="monotone" dataKey="revenue" stroke="#5AD7C4" strokeWidth={3} dot={false} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <DecisionCanvas selectedOpportunity={selectedOpportunity} />
       </section>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -221,13 +185,13 @@ export function OverviewPage() {
 
       <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
         <Card className="border-white/10 bg-white/[0.04]">
-          <CardHeader>
+          <CardHeader className="border-b border-white/10 pb-5">
             <div className="flex items-center justify-between gap-4">
               <CardTitle>Opportunity Table</CardTitle>
               <p className="text-xs uppercase tracking-[0.16em] text-slate-500">{filteredRows.length} rows</p>
             </div>
           </CardHeader>
-          <CardContent className="overflow-x-auto scroll-clean">
+          <CardContent className="overflow-x-auto scroll-clean pt-6">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -235,36 +199,55 @@ export function OverviewPage() {
                   <TableHead>Producto</TableHead>
                   <TableHead>Canal</TableHead>
                   <TableHead>Score</TableHead>
-                  <TableHead>Margen</TableHead>
+                  <TableHead>Impacto</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead>Accion</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredRows.map((row) => (
-                  <TableRow key={row.id} className="cursor-pointer" onClick={() => setSelectedOpportunityId(row.id)}>
-                    <TableCell className="font-medium text-white">{row.region}</TableCell>
-                    <TableCell>{row.product}</TableCell>
-                    <TableCell>{row.channel}</TableCell>
-                    <TableCell>
-                      <div className="space-y-2">
-                        <span>{row.opportunityScore}</span>
-                        <MiniBar value={row.opportunityScore} tone={row.status === "Watchlist" ? "rose" : "accent"} />
-                      </div>
-                    </TableCell>
-                    <TableCell>{row.marginPotential}</TableCell>
-                    <TableCell>
-                      <StatusChip label={row.status} />
-                    </TableCell>
-                    <TableCell className="max-w-[320px] text-slate-300">{row.action}</TableCell>
-                  </TableRow>
-                ))}
+                {filteredRows.map((row) => {
+                  const active = selectedOpportunity.id === row.id;
+
+                  return (
+                    <TableRow
+                      key={row.id}
+                      className={`cursor-pointer transition ${active ? "bg-accent/10" : ""}`}
+                      onClick={() => setSelectedOpportunityId(row.id)}
+                    >
+                      <TableCell className="font-medium text-white">{row.region}</TableCell>
+                      <TableCell>{row.product}</TableCell>
+                      <TableCell>{row.channel}</TableCell>
+                      <TableCell>
+                        <div className="space-y-2">
+                          <span>{row.opportunityScore}</span>
+                          <MiniBar value={row.opportunityScore} tone={row.status === "Watchlist" ? "rose" : "accent"} />
+                        </div>
+                      </TableCell>
+                      <TableCell>{row.impactRange}</TableCell>
+                      <TableCell>
+                        <StatusChip label={row.status} />
+                      </TableCell>
+                      <TableCell className="max-w-[320px] text-slate-300">{row.action}</TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </CardContent>
         </Card>
 
         <div className="grid gap-4">
+          <Card className="border-white/10 bg-white/[0.04]">
+            <CardHeader>
+              <CardTitle>Estimated Business Impact</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-3">
+              <ImpactTile value={dashboardData.impactPotential.salesLift} label="Revenue uplift" detail="Expansión regional acelerada" />
+              <ImpactTile value={dashboardData.impactPotential.marginLift} label="Margin optimization" detail="Mejor mezcla de portafolio" />
+              <ImpactTile value={dashboardData.impactPotential.marketingLift} label="Marketing efficiency" detail="Inversión mejor reasignada" />
+            </CardContent>
+          </Card>
+
           <Card className="surface-highlight border-white/10 bg-white/[0.04]">
             <CardHeader>
               <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-accent">
@@ -388,40 +371,67 @@ export function OverviewPage() {
           </div>
         </div>
       </DetailPanel>
+    </div>
+  );
+}
 
-      <DetailPanel
-        open={Boolean(selectedOpportunity)}
-        onClose={() => setSelectedOpportunityId(null)}
-        title={selectedOpportunity?.product ?? "Opportunity"}
-        subtitle={selectedOpportunity ? `${selectedOpportunity.region} • ${selectedOpportunity.channel}` : ""}
-      >
-        {selectedOpportunity ? (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <PanelMetric label="Score" value={`${selectedOpportunity.opportunityScore}`} />
-              <PanelMetric label="Margen" value={`${selectedOpportunity.marginPotential}`} />
-              <PanelMetric label="Impacto" value={selectedOpportunity.impactRange} />
-              <div className="rounded-2xl border border-white/10 bg-[#09101F] px-4 py-4">
-                <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Estado</p>
-                <div className="mt-3">
-                  <StatusChip label={selectedOpportunity.status} />
-                </div>
-              </div>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-[#09101F] p-4">
-              <p className="text-[11px] uppercase tracking-[0.16em] text-accent">Accion</p>
-              <p className="mt-2 text-sm text-slate-200">{selectedOpportunity.action}</p>
-            </div>
-            <div className="space-y-3">
-              {selectedOpportunity.rationale.map((item) => (
-                <div key={item} className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-300">
-                  {item}
-                </div>
-              ))}
+function DecisionCanvas({ selectedOpportunity }: { selectedOpportunity: OpportunityRow }) {
+  return (
+    <Card className="surface-highlight border-white/10 bg-gradient-to-br from-[#0B1528] via-[#0A1021] to-[#10243B]">
+      <CardHeader className="border-b border-white/10 pb-5">
+        <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-accent">
+          <ChartColumnIncreasing className="h-4 w-4" />
+          Decision canvas
+        </div>
+        <CardTitle className="text-3xl text-white">{selectedOpportunity.region}</CardTitle>
+        <p className="text-sm text-slate-400">
+          {selectedOpportunity.product} • {selectedOpportunity.channel}
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-4 pt-6">
+        <div className="grid grid-cols-2 gap-3">
+          <PanelMetric label="Score" value={`${selectedOpportunity.opportunityScore}`} />
+          <PanelMetric label="Margen" value={`${selectedOpportunity.marginPotential}`} />
+          <PanelMetric label="Impacto" value={selectedOpportunity.impactRange} />
+          <div className="rounded-2xl border border-white/10 bg-[#09101F] px-4 py-4">
+            <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Estado</p>
+            <div className="mt-3">
+              <StatusChip label={selectedOpportunity.status} />
             </div>
           </div>
-        ) : null}
-      </DetailPanel>
+        </div>
+        <div className="rounded-3xl border border-accent/20 bg-accent/10 p-5">
+          <p className="text-[11px] uppercase tracking-[0.16em] text-accent">Next move</p>
+          <p className="mt-3 text-base leading-7 text-slate-100">{selectedOpportunity.action}</p>
+        </div>
+        <div className="space-y-3">
+          {selectedOpportunity.rationale.map((item, index) => (
+            <div key={item} className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-4">
+              <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Signal {index + 1}</p>
+              <p className="mt-2 text-sm text-slate-300">{item}</p>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ImpactTile({ value, label, detail }: { value: string; label: string; detail: string }) {
+  return (
+    <div className="rounded-[28px] border border-white/10 bg-[#09101F] p-5">
+      <p className="font-display text-4xl tracking-tight text-white">{value}</p>
+      <p className="mt-3 text-[11px] uppercase tracking-[0.18em] text-slate-500">{label}</p>
+      <p className="mt-3 text-sm text-slate-400">{detail}</p>
+    </div>
+  );
+}
+
+function MetricChip({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl bg-white/[0.04] px-4 py-3">
+      <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">{label}</p>
+      <p className="mt-2 text-sm text-white">{value}</p>
     </div>
   );
 }
