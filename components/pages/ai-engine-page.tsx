@@ -10,7 +10,6 @@ import { SearchInput } from "@/components/common/search-input";
 import { StatusChip } from "@/components/common/status-chip";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { dashboardData } from "@/lib/mock-data";
 import { generateActionPlan } from "@/lib/report";
 import { OpportunityCard } from "@/lib/types";
@@ -21,7 +20,7 @@ type SignalFilter = "Todos" | "Oportunidad" | "Riesgo";
 export function AiOpportunityEnginePage() {
   const [query, setQuery] = useState("");
   const [signalFilter, setSignalFilter] = useState<SignalFilter>("Todos");
-  const [selected, setSelected] = useState<OpportunityCard | null>(dashboardData.opportunities[0] ?? null);
+  const [selected, setSelected] = useState<OpportunityCard | null>(null);
   const [plan, setPlan] = useState<string[] | null>(null);
 
   const rows = useMemo(() => {
@@ -56,7 +55,7 @@ export function AiOpportunityEnginePage() {
         <MiniMetric title="Impact range" value="+9%" detail="Escenario superior" />
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[1.18fr_0.82fr]">
+      <section className="grid gap-4 xl:grid-cols-[1.08fr_0.92fr]">
         <Card className="border-white/10 bg-white/[0.04]">
           <CardHeader className="gap-4">
             <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
@@ -79,44 +78,48 @@ export function AiOpportunityEnginePage() {
             </div>
             <SearchInput value={query} onChange={setQuery} placeholder="Buscar producto, region, canal u oportunidad..." />
           </CardHeader>
-          <CardContent className="overflow-x-auto scroll-clean">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Region</TableHead>
-                  <TableHead>Producto</TableHead>
-                  <TableHead>Canal</TableHead>
-                  <TableHead>Opportunity Score</TableHead>
-                  <TableHead>Margen Potencial</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Accion sugerida</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((opportunity) => {
-                  const region = dashboardData.regions.find((item) => item.region === opportunity.region);
-                  const status = opportunity.type === "Riesgo" ? "Watchlist" : opportunity.score >= 85 ? "Alta prioridad" : "Seguimiento";
-                  return (
-                    <TableRow key={opportunity.id} className="cursor-pointer" onClick={() => setSelected(opportunity)}>
-                      <TableCell className="font-medium text-white">{opportunity.region}</TableCell>
-                      <TableCell>{opportunity.product}</TableCell>
-                      <TableCell>{formatChannelLabel(opportunity.channel)}</TableCell>
-                      <TableCell>
-                        <div className="space-y-2">
-                          <span>{opportunity.score}</span>
-                          <MiniBar value={opportunity.score} tone={opportunity.type === "Riesgo" ? "rose" : "accent"} />
-                        </div>
-                      </TableCell>
-                      <TableCell>{region?.marginPotential ?? 0}</TableCell>
-                      <TableCell>
-                        <StatusChip label={status} />
-                      </TableCell>
-                      <TableCell className="max-w-[300px] text-slate-300">{opportunity.action}</TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+          <CardContent className="grid gap-3">
+            {rows.length === 0 ? (
+              <div className="rounded-3xl border border-dashed border-white/10 bg-[#09101F] px-5 py-10 text-center text-sm text-slate-400">
+                Sin resultados para los filtros actuales.
+              </div>
+            ) : null}
+            {rows.map((opportunity) => {
+              const region = dashboardData.regions.find((item) => item.region === opportunity.region);
+              const status = opportunity.type === "Riesgo" ? "Watchlist" : opportunity.score >= 85 ? "Alta prioridad" : "Seguimiento";
+              return (
+                <button
+                  key={opportunity.id}
+                  onClick={() => setSelected(opportunity)}
+                  className="rounded-3xl border border-white/10 bg-[#09101F] p-5 text-left transition hover:-translate-y-1 hover:border-white/20"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-white">{opportunity.title}</p>
+                      <p className="mt-1 text-xs uppercase tracking-[0.16em] text-slate-500">
+                        {opportunity.region} • {formatChannelLabel(opportunity.channel)}
+                      </p>
+                    </div>
+                    <StatusChip label={status} />
+                  </div>
+                  <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto_auto] md:items-center">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.16em] text-slate-500">{opportunity.product}</p>
+                      <p className="mt-2 text-sm text-slate-300">{opportunity.action}</p>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 px-4 py-3">
+                      <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Score</p>
+                      <p className="mt-2 text-xl text-white">{opportunity.score}</p>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 px-4 py-3">
+                      <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Margen</p>
+                      <p className="mt-2 text-xl text-white">{region?.marginPotential ?? 0}</p>
+                    </div>
+                  </div>
+                  <MiniBar value={opportunity.score} tone={opportunity.type === "Riesgo" ? "rose" : "accent"} className="mt-4" />
+                </button>
+              );
+            })}
           </CardContent>
         </Card>
 

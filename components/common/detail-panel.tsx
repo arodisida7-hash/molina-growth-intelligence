@@ -24,13 +24,13 @@ export function DetailPanel({
         aria-label="Cerrar detalle"
         onClick={onClose}
         className={cn(
-          "absolute inset-0 bg-[#02040C]/70 backdrop-blur-sm transition",
+          "absolute inset-0 bg-[#02040C]/62 transition",
           open ? "pointer-events-auto opacity-100" : "opacity-0"
         )}
       />
       <aside
         className={cn(
-          "absolute right-0 top-0 h-full w-full max-w-xl border-l border-white/10 bg-[#08101F]/95 shadow-[0_30px_90px_rgba(0,0,0,0.45)] backdrop-blur-xl transition duration-300",
+          "absolute right-0 top-0 h-full w-full max-w-[540px] border-l border-white/10 bg-[#08101F] shadow-[0_30px_90px_rgba(0,0,0,0.45)] transition duration-300 will-change-transform",
           open ? "translate-x-0 pointer-events-auto" : "translate-x-full"
         )}
       >

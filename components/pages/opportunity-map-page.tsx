@@ -15,10 +15,8 @@ import { formatChannelLabel, formatCompactCurrency, formatPercent } from "@/lib/
 const regionOrder = ["Tijuana", "Monterrey", "Leon", "Guadalajara", "Queretaro", "CDMX", "Merida", "Puebla", "Cancun"];
 
 export function OpportunityMapPage() {
-  const [selected, setSelected] = useState<RegionMetric>(topRegionsByOpportunity[0]);
-  const [activationMessage, setActivationMessage] = useState(
-    `Plan regional listo para ${topRegionsByOpportunity[0].region}.`
-  );
+  const [selected, setSelected] = useState<RegionMetric | null>(null);
+  const [activationMessage, setActivationMessage] = useState("Selecciona una region para ver el detalle.");
 
   const orderedRegions = useMemo(
     () => regionOrder.map((name) => dashboardData.regions.find((region) => region.region === name)!).filter(Boolean),
@@ -45,7 +43,7 @@ export function OpportunityMapPage() {
           <CardContent>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {orderedRegions.map((region) => {
-                const active = region.region === selected.region;
+                const active = region.region === selected?.region;
                 return (
                   <button
                     key={region.region}
@@ -60,17 +58,17 @@ export function OpportunityMapPage() {
                     }`}
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <div>
+                      <div className="min-w-0">
                         <p className="font-display text-2xl text-white">{region.region}</p>
-                        <p className="mt-2 text-sm text-slate-400">{region.segment}</p>
+                        <p className="mt-2 text-sm leading-6 text-slate-400">{region.segment}</p>
                       </div>
                       <div className="rounded-full bg-white/[0.06] px-3 py-1 text-sm font-medium text-white">{region.opportunityScore}</div>
                     </div>
-                    <div className="mt-5 space-y-3">
-                      <ScoreLine label="Demanda" value={region.demandIndex} />
-                      <ScoreLine label="Penetracion" value={region.penetrationIndex} />
-                      <ScoreLine label="Margen potencial" value={region.marginPotential} />
-                      <ScoreLine label="Riesgo de stock" value={100 - region.stockRisk} />
+                    <div className="mt-5 grid grid-cols-2 gap-3">
+                      <MetricChip label="Demanda" value={region.demandIndex} />
+                      <MetricChip label="Penetracion" value={region.penetrationIndex} />
+                      <MetricChip label="Margen" value={region.marginPotential} />
+                      <MetricChip label="Stock" value={100 - region.stockRisk} />
                     </div>
                   </button>
                 );
@@ -85,46 +83,54 @@ export function OpportunityMapPage() {
               <Radar className="h-4 w-4" />
               Recomendacion actual
             </div>
-            <CardTitle className="text-3xl">{selected.region}</CardTitle>
+            <CardTitle className="text-3xl">{selected?.region ?? "Sin seleccion"}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
-            <div className="grid grid-cols-2 gap-3">
-              <MetricTile label="Ingresos estimados" value={formatCompactCurrency(selected.revenue)} />
-              <MetricTile label="Crecimiento" value={formatPercent(selected.growth)} />
-              <MetricTile label="Canal dominante" value={formatChannelLabel(selected.dominantChannel)} />
-              <MetricTile label="Salud distribuidor" value={`${selected.distributorHealth}/100`} />
-            </div>
-            <div className="rounded-3xl border border-accent/20 bg-accent/10 p-5">
-              <p className="text-xs uppercase tracking-[0.18em] text-accent">Lectura estrategica</p>
-              <p className="mt-3 text-sm leading-7 text-slate-100">{selected.recommendation}</p>
-            </div>
-            <div className="grid gap-3">
-              {[
-                ["Demanda", selected.demandIndex],
-                ["Penetracion", selected.penetrationIndex],
-                ["Margen potencial", selected.marginPotential],
-                ["Stock risk inverso", 100 - selected.stockRisk]
-              ].map(([label, value]) => (
-                <div key={String(label)} className="rounded-2xl bg-[#09101F] p-4">
-                  <div className="mb-2 flex items-center justify-between text-sm text-slate-300">
-                    <span>{label}</span>
-                    <span>{value}</span>
-                  </div>
-                  <Progress value={Number(value)} />
+            {selected ? (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <MetricTile label="Ingresos" value={formatCompactCurrency(selected.revenue)} />
+                  <MetricTile label="Crecimiento" value={formatPercent(selected.growth)} />
+                  <MetricTile label="Canal" value={formatChannelLabel(selected.dominantChannel)} />
+                  <MetricTile label="Salud" value={`${selected.distributorHealth}/100`} />
                 </div>
-              ))}
-            </div>
-            <Button
-              className="w-full justify-between"
-              onClick={() =>
-                setActivationMessage(
-                  `Se priorizo ${selected.region} para activacion comercial con foco en ${formatChannelLabel(selected.dominantChannel)}.`
-                )
-              }
-            >
-              <span>Activar recomendacion regional</span>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+                <div className="rounded-3xl border border-accent/20 bg-accent/10 p-5">
+                  <p className="text-xs uppercase tracking-[0.18em] text-accent">Lectura estrategica</p>
+                  <p className="mt-3 text-sm leading-7 text-slate-100">{selected.recommendation}</p>
+                </div>
+                <div className="grid gap-3">
+                  {[
+                    ["Demanda", selected.demandIndex],
+                    ["Penetracion", selected.penetrationIndex],
+                    ["Margen potencial", selected.marginPotential],
+                    ["Stock risk inverso", 100 - selected.stockRisk]
+                  ].map(([label, value]) => (
+                    <div key={String(label)} className="rounded-2xl bg-[#09101F] p-4">
+                      <div className="mb-2 flex items-center justify-between text-sm text-slate-300">
+                        <span>{label}</span>
+                        <span>{value}</span>
+                      </div>
+                      <Progress value={Number(value)} />
+                    </div>
+                  ))}
+                </div>
+                <Button
+                  className="w-full justify-between"
+                  onClick={() =>
+                    setActivationMessage(
+                      `Se priorizo ${selected.region} para activacion comercial con foco en ${formatChannelLabel(selected.dominantChannel)}.`
+                    )
+                  }
+                >
+                  <span>Activar recomendacion regional</span>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </>
+            ) : (
+              <div className="rounded-3xl border border-dashed border-white/10 bg-[#09101F] px-5 py-10 text-center text-sm text-slate-400">
+                Haz clic en una region para ver su contexto comercial.
+              </div>
+            )}
             <div className="rounded-2xl border border-accent/20 bg-accent/10 px-4 py-3 text-sm text-slate-100">
               {activationMessage}
             </div>
@@ -200,6 +206,15 @@ function ScoreLine({ label, value }: { label: string; value: number }) {
         <span>{value}</span>
       </div>
       <Progress value={value} />
+    </div>
+  );
+}
+
+function MetricChip({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-2xl bg-white/[0.04] px-3 py-3">
+      <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">{label}</p>
+      <p className="mt-2 text-lg text-white">{value}</p>
     </div>
   );
 }

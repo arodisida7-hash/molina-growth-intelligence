@@ -49,7 +49,7 @@ function getPriority(segment: string): CoverageRow["priority"] {
 export function DistributionIntelligencePage() {
   const [query, setQuery] = useState("");
   const [priority, setPriority] = useState<CoveragePriority>("Todos");
-  const [selectedRegion, setSelectedRegion] = useState<string | null>(dashboardData.regions[0]?.region ?? null);
+  const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
 
   const rows = useMemo<CoverageRow[]>(() => {
     return dashboardData.regions.map((region) => {
@@ -81,7 +81,7 @@ export function DistributionIntelligencePage() {
     });
   }, [priority, query, rows]);
 
-  const selected = rows.find((row) => row.region === selectedRegion) ?? filteredRows[0] ?? rows[0];
+  const selected = rows.find((row) => row.region === selectedRegion) ?? null;
   const topPriorities = rows.filter((row) => row.priority === "Expandir" || row.priority === "Defender").slice(0, 4);
   const watchlist = rows.filter((row) => row.priority === "Riesgo" || row.stockRisk >= 28).slice(0, 3);
 
@@ -209,7 +209,7 @@ export function DistributionIntelligencePage() {
       </section>
 
       <DetailPanel
-        open={Boolean(selected)}
+        open={selected !== null}
         onClose={() => setSelectedRegion(null)}
         title={selected?.region ?? "Region"}
         subtitle={selected ? `${selected.channel} • ${selected.distributor}` : ""}
