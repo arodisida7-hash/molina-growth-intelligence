@@ -34,26 +34,26 @@ type NavSection = {
 
 export const navSections: NavSection[] = [
   {
-    label: "Overview",
+    label: "Resumen",
     items: [{ href: "/overview", label: "Resumen Ejecutivo", icon: LayoutDashboard }]
   },
   {
-    label: "Commercial Intelligence",
+    label: "Inteligencia comercial",
     items: [
-      { href: "/ai-opportunity-engine", label: "Opportunity Table", icon: Activity },
-      { href: "/board-report", label: "Top priorities", icon: FileText }
+      { href: "/ai-opportunity-engine", label: "Motor de oportunidades", icon: Activity },
+      { href: "/board-report", label: "Memo semanal", icon: FileText }
     ]
   },
   {
-    label: "Regions",
+    label: "Regiones",
     items: [
       { href: "/opportunity-map", label: "Mapa de Oportunidad", icon: Map },
       { href: "/distribution-intelligence", label: "Cobertura", icon: Truck }
     ]
   },
   {
-    label: "Products",
-    items: [{ href: "/product-margin", label: "Producto y Margen", icon: Package2 }]
+    label: "Productos",
+    items: [{ href: "/product-margin", label: "Producto y margen", icon: Package2 }]
   },
   {
     label: "Marketing",
@@ -75,9 +75,9 @@ export function AppSidebar() {
             <Activity className="h-6 w-6" />
           </div>
           <div className="space-y-2">
-            <p className="text-xs font-medium uppercase tracking-[0.3em] text-accent">Molina Intelligence</p>
-            <h2 className="font-display text-2xl font-semibold text-white">Growth Intelligence</h2>
-            <p className="text-sm text-slate-400">Expansion, margen y decisiones.</p>
+            <p className="text-xs font-medium uppercase tracking-[0.3em] text-accent">Molina Growth</p>
+            <h2 className="font-display text-2xl font-semibold text-white">Inteligencia comercial</h2>
+            <p className="text-sm text-slate-400">Prioriza expansión, margen y cobertura.</p>
           </div>
         </div>
 

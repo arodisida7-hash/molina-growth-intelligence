@@ -36,13 +36,13 @@ export function DashboardShell({ children }: { children: ReactNode }) {
       ...dashboardData.regions.map((item) => ({
         id: item.region,
         label: item.region,
-        meta: "Region",
+        meta: "Región",
         href: "/opportunity-map" as Route
       })),
       ...dashboardData.campaigns.map((item) => ({
         id: item.id,
         label: item.name,
-        meta: "Campana",
+        meta: "Campaña",
         href: "/marketing-intelligence" as Route
       })),
       ...dashboardData.opportunities.map((item) => ({
@@ -70,7 +70,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
                     Corte al 11 de marzo de 2026
                   </div>
                   <p className="text-sm text-slate-300">
-                    Capa de inteligencia comercial para potenciar CRM, SAP y BI con decisiones de expansion, margen y cobertura.
+                    Capa de inteligencia comercial sobre CRM, SAP y BI para priorizar expansión, margen y cobertura.
                   </p>
                 </div>
                 <div className="flex flex-col gap-3 lg:min-w-[420px]">
@@ -78,7 +78,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
                     <SearchInput
                       value={query}
                       onChange={setQuery}
-                      placeholder="Buscar producto, region, campana u oportunidad..."
+                      placeholder="Buscar producto, región, campaña u oportunidad..."
                     />
                     {results.length > 0 ? (
                       <div className="absolute top-[calc(100%+0.5rem)] z-30 w-full rounded-3xl border border-white/10 bg-[#08101F]/95 p-2 shadow-panel backdrop-blur-xl">
@@ -105,7 +105,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
                     <Link href="/api/report" className={buttonVariants("secondary")}>
                       <span className="inline-flex items-center gap-2">
                         <Download className="h-4 w-4" />
-                        JSON del reporte
+                        Exportar JSON
                       </span>
                     </Link>
                     <Link href="/" className={buttonVariants("ghost")}>
@@ -128,7 +128,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
           <footer className="border-t border-white/10 px-5 py-4 md:px-8 xl:px-10">
             <div className="dashboard-container">
               <div className="flex items-center justify-end">
-                <p className="text-sm text-slate-500">Designed to work with CRM, SAP and BI systems.</p>
+                <p className="text-sm text-slate-500">Diseñado para integrarse con CRM, SAP y BI.</p>
               </div>
             </div>
           </footer>

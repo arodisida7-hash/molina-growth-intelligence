@@ -1,76 +1,98 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowRight, Radar, WandSparkles } from "lucide-react";
+import { ListChecks, Radar, ShieldAlert, Sparkles } from "lucide-react";
 
+import { DetailPanel } from "@/components/common/detail-panel";
 import { MiniBar } from "@/components/common/mini-bar";
 import { PageHeader } from "@/components/common/page-header";
 import { SearchInput } from "@/components/common/search-input";
 import { StatusChip } from "@/components/common/status-chip";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { dashboardData } from "@/lib/mock-data";
-import { generateActionPlan } from "@/lib/report";
 import { OpportunityCard } from "@/lib/types";
 import { formatChannelLabel } from "@/lib/utils";
 
-type SignalFilter = "Todos" | "Oportunidad" | "Riesgo";
+type OpportunityFilter = "Todas" | "Oportunidad" | "Riesgo";
+
+type OpportunityRow = OpportunityCard & {
+  status: "Prioridad alta" | "Seguimiento" | "Riesgo";
+  revenuePotential: string;
+  marginPotential: number;
+};
+
+function getOpportunityStatus(score: number, type: "Oportunidad" | "Riesgo"): OpportunityRow["status"] {
+  if (type === "Riesgo") return "Riesgo";
+  if (score >= 85) return "Prioridad alta";
+  return "Seguimiento";
+}
 
 export function AiOpportunityEnginePage() {
   const [query, setQuery] = useState("");
-  const [signalFilter, setSignalFilter] = useState<SignalFilter>("Todos");
+  const [filter, setFilter] = useState<OpportunityFilter>("Todas");
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [plan, setPlan] = useState<string[] | null>(null);
 
-  const rows = useMemo(() => {
+  const rows = useMemo<OpportunityRow[]>(
+    () =>
+      dashboardData.opportunities.map((item) => {
+        const region = dashboardData.regions.find((regionItem) => regionItem.region === item.region);
+        return {
+          ...item,
+          status: getOpportunityStatus(item.score, item.type),
+          revenuePotential: item.impactRange,
+          marginPotential: region?.marginPotential ?? 0
+        };
+      }),
+    []
+  );
+
+  const filteredRows = useMemo(() => {
     const value = query.trim().toLowerCase();
 
-    return dashboardData.opportunities.filter((opportunity) => {
+    return rows.filter((row) => {
       const matchesQuery =
         !value ||
-        `${opportunity.title} ${opportunity.region} ${opportunity.product} ${opportunity.channel}`.toLowerCase().includes(value);
-      const matchesType = signalFilter === "Todos" || opportunity.type === signalFilter;
-      return matchesQuery && matchesType;
+        `${row.region} ${row.product} ${row.channel} ${row.title} ${row.action}`.toLowerCase().includes(value);
+      const matchesFilter =
+        filter === "Todas" ||
+        (filter === "Oportunidad" && row.type === "Oportunidad") ||
+        (filter === "Riesgo" && row.type === "Riesgo");
+      return matchesQuery && matchesFilter;
     });
-  }, [query, signalFilter]);
+  }, [filter, query, rows]);
 
-  const selected = rows.find((item) => item.id === selectedId) ?? rows[0] ?? dashboardData.opportunities[0];
-  const highestImpact = [...dashboardData.opportunities].sort((left, right) => right.score - left.score).slice(0, 3);
-  const watchlist = dashboardData.opportunities.filter((opportunity) => opportunity.type === "Riesgo").slice(0, 3);
+  const selected = filteredRows.find((row) => row.id === selectedId) ?? filteredRows[0] ?? rows[0];
+  const topPriorities = rows.filter((row) => row.status === "Prioridad alta").slice(0, 3);
+  const watchlist = rows.filter((row) => row.status === "Riesgo").slice(0, 3);
 
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Opportunity Engine"
-        title="Opportunity Table"
-        description="Cada señal se convierte en una lectura de negocio, una acción y un rango de impacto."
+        eyebrow="Motor de oportunidades"
+        title="Oportunidades comerciales"
+        description="Qué activar, qué vigilar y qué impacto podría generar cada frente comercial."
       />
 
-      <section className="dashboard-grid">
-        <div className="col-span-12 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <CompactStat title="Open signals" value="6" detail="Lectura activa" />
-        <CompactStat title="High confidence" value="3" detail="Listas para actuar" />
-        <CompactStat title="Watchlist" value="2" detail="Riesgos relevantes" />
-        <CompactStat title="Impact range" value="+9%" detail="Escenario superior" />
-        </div>
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <MetricCard title="Oportunidades abiertas" value={`${rows.filter((row) => row.type === "Oportunidad").length}`} detail="Frentes listos para analizar" icon={Sparkles} />
+        <MetricCard title="Prioridad alta" value={`${rows.filter((row) => row.status === "Prioridad alta").length}`} detail="Con mejor retorno esperado" icon={Radar} />
+        <MetricCard title="Riesgos activos" value={`${watchlist.length}`} detail="Con efecto sobre margen o cobertura" icon={ShieldAlert} />
+        <MetricCard title="Acciones sugeridas" value={`${dashboardData.recommendedActions.length}`} detail="Próximos pasos modelados" icon={ListChecks} />
       </section>
 
-      <section className="dashboard-grid">
-        <div className="col-span-12 xl:col-span-7">
+      <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
         <Card className="border-white/10 bg-white/[0.04]">
           <CardHeader className="gap-4 border-b border-white/10 pb-5">
-            <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-              <div className="space-y-2">
-                <CardTitle className="text-3xl">Signal Feed</CardTitle>
-                <p className="text-sm text-slate-400">Selecciona una señal para actualizar el playbook ejecutivo.</p>
-              </div>
+            <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+              <CardTitle>Tabla de oportunidades</CardTitle>
               <div className="flex flex-wrap gap-2">
-                {["Todos", "Oportunidad", "Riesgo"].map((option) => (
+                {["Todas", "Oportunidad", "Riesgo"].map((option) => (
                   <button
                     key={option}
-                    onClick={() => setSignalFilter(option as SignalFilter)}
+                    onClick={() => setFilter(option as OpportunityFilter)}
                     className={`rounded-full border px-3 py-1.5 text-xs uppercase tracking-[0.16em] transition ${
-                      signalFilter === option
+                      filter === option
                         ? "border-accent/30 bg-accent/10 text-accent"
                         : "border-white/10 bg-white/[0.03] text-slate-400 hover:text-white"
                     }`}
@@ -80,213 +102,163 @@ export function AiOpportunityEnginePage() {
                 ))}
               </div>
             </div>
-            <SearchInput value={query} onChange={setQuery} placeholder="Buscar producto, region, canal u oportunidad..." />
+            <SearchInput value={query} onChange={setQuery} placeholder="Buscar región, producto o canal..." className="xl:max-w-[440px]" />
           </CardHeader>
-          <CardContent className="grid gap-4 pt-6">
-            {rows.length === 0 ? (
-              <div className="rounded-3xl border border-dashed border-white/10 bg-[#09101F] px-5 py-10 text-center text-sm text-slate-400">
-                Sin resultados para los filtros actuales.
-              </div>
-            ) : null}
-            {rows.map((opportunity) => {
-              const region = dashboardData.regions.find((item) => item.region === opportunity.region);
-              const status = opportunity.type === "Riesgo" ? "Watchlist" : opportunity.score >= 85 ? "Alta prioridad" : "Seguimiento";
-              const active = selected.id === opportunity.id;
-
-              return (
-                <button
-                  key={opportunity.id}
-                  onClick={() => setSelectedId(opportunity.id)}
-                  className={`group relative overflow-hidden rounded-[28px] border p-5 text-left transition duration-300 ${
-                    active
-                      ? "border-accent/30 bg-gradient-to-br from-[#0B1528] via-[#0A1021] to-[#10243B] shadow-[0_20px_60px_rgba(0,0,0,0.35)]"
-                      : "border-white/10 bg-[#09101F] hover:-translate-y-1 hover:border-white/20"
-                  }`}
-                >
-                  <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent to-transparent opacity-70" />
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium text-white">{opportunity.title}</p>
-                      <p className="text-xs uppercase tracking-[0.16em] text-slate-500">
-                        {opportunity.region} • {formatChannelLabel(opportunity.channel)}
-                      </p>
-                    </div>
-                    <StatusChip label={status} />
-                  </div>
-                  <div className="mt-5 grid gap-3 md:grid-cols-[1fr_auto_auto]">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.16em] text-slate-500">{opportunity.product}</p>
-                      <p className="mt-2 text-sm leading-7 text-slate-300">{opportunity.action}</p>
-                    </div>
-                    <SignalMetric label="Score" value={`${opportunity.score}`} />
-                    <SignalMetric label="Margen" value={`${region?.marginPotential ?? 0}`} />
-                  </div>
-                  <div className="mt-5 grid grid-cols-2 gap-3">
-                    <MetricChip label="Impacto" value={opportunity.impactRange} />
-                    <MetricChip label="Confianza" value={`${opportunity.confidence}%`} />
-                  </div>
-                  <MiniBar value={opportunity.score} tone={opportunity.type === "Riesgo" ? "rose" : "accent"} className="mt-4" />
-                  <div className="mt-4 inline-flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-accent">
-                    Ver playbook
-                    <ArrowRight className="h-4 w-4" />
-                  </div>
-                </button>
-              );
-            })}
+          <CardContent className="overflow-x-auto scroll-clean pt-6">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Región</TableHead>
+                  <TableHead>Producto</TableHead>
+                  <TableHead>Canal</TableHead>
+                  <TableHead>Score de oportunidad</TableHead>
+                  <TableHead>Potencial de ingresos</TableHead>
+                  <TableHead>Potencial de margen</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>Acción sugerida</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredRows.map((row) => (
+                  <TableRow key={row.id} className="cursor-pointer" onClick={() => setSelectedId(row.id)}>
+                    <TableCell className="font-medium text-white">{row.region}</TableCell>
+                    <TableCell>{row.product}</TableCell>
+                    <TableCell>{formatChannelLabel(row.channel)}</TableCell>
+                    <TableCell>
+                      <div className="space-y-2">
+                        <span>{row.score}</span>
+                        <MiniBar value={row.score} tone={row.status === "Riesgo" ? "rose" : "accent"} />
+                      </div>
+                    </TableCell>
+                    <TableCell>{row.revenuePotential}</TableCell>
+                    <TableCell>{row.marginPotential}</TableCell>
+                    <TableCell>
+                      <StatusChip label={row.status} />
+                    </TableCell>
+                    <TableCell className="max-w-[320px] text-slate-300">{row.action}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
-        </div>
 
-        <div className="col-span-12 grid gap-4 xl:col-span-5">
-          <PlaybookPanel selected={selected} plan={plan} onGeneratePlan={() => setPlan(generateActionPlan(dashboardData.opportunities))} />
+        <div className="grid gap-4">
+          <Card className="border-white/10 bg-white/[0.04]">
+            <CardHeader>
+              <CardTitle>Top prioridades</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {topPriorities.map((row) => (
+                <button
+                  key={row.id}
+                  onClick={() => setSelectedId(row.id)}
+                  className="w-full rounded-2xl border border-white/10 bg-[#09101F] p-4 text-left transition hover:border-white/20"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <p className="text-sm text-white">{row.region}</p>
+                    <StatusChip label={row.status} />
+                  </div>
+                  <p className="mt-2 text-xs uppercase tracking-[0.16em] text-slate-500">
+                    {row.product} • {formatChannelLabel(row.channel)}
+                  </p>
+                  <p className="mt-3 text-sm text-slate-300">{row.action}</p>
+                </button>
+              ))}
+            </CardContent>
+          </Card>
 
-          <CompactList title="Highest impact opportunities" items={highestImpact} onSelect={(item) => setSelectedId(item.id)} />
-          <CompactList title="Watchlist" items={watchlist} onSelect={(item) => setSelectedId(item.id)} />
+          <Card className="border-white/10 bg-white/[0.04]">
+            <CardHeader>
+            <CardTitle>Vigilancia</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {watchlist.map((row) => (
+                <button
+                  key={row.id}
+                  onClick={() => setSelectedId(row.id)}
+                  className="w-full rounded-2xl border border-white/10 bg-[#09101F] p-4 text-left transition hover:border-white/20"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <p className="text-sm text-white">{row.region}</p>
+                    <StatusChip label={row.status} />
+                  </div>
+                  <p className="mt-2 text-xs uppercase tracking-[0.16em] text-slate-500">{row.product}</p>
+                  <p className="mt-3 text-sm text-slate-300">{row.action}</p>
+                </button>
+              ))}
+            </CardContent>
+          </Card>
         </div>
       </section>
-    </div>
-  );
-}
 
-function PlaybookPanel({
-  selected,
-  plan,
-  onGeneratePlan
-}: {
-  selected: OpportunityCard;
-  plan: string[] | null;
-  onGeneratePlan: () => void;
-}) {
-  return (
-    <Card className="surface-highlight border-white/10 bg-gradient-to-br from-[#0B1528] via-[#0A1021] to-[#10243B]">
-      <CardHeader className="border-b border-white/10 pb-5">
-        <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-accent">
-          <Radar className="h-4 w-4" />
-          Executive playbook
-        </div>
-        <CardTitle className="text-3xl">{selected.title}</CardTitle>
-        <p className="text-sm text-slate-400">
-          {selected.region} • {selected.product} • {formatChannelLabel(selected.channel)}
-        </p>
-      </CardHeader>
-      <CardContent className="space-y-4 pt-6">
-        <div className="grid grid-cols-2 gap-3">
-          <SignalMetric label="Score" value={`${selected.score}`} />
-          <SignalMetric label="Confianza" value={`${selected.confidence}%`} />
-          <SignalMetric label="Impacto" value={selected.impactRange} />
-          <div className="rounded-2xl border border-white/10 bg-[#09101F] px-4 py-4">
-            <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Estado</p>
-            <div className="mt-3">
-              <StatusChip label={selected.type === "Riesgo" ? "Watchlist" : "Alta prioridad"} />
+      <DetailPanel
+        open={Boolean(selected)}
+        onClose={() => setSelectedId(null)}
+        title={selected?.title ?? "Oportunidad"}
+        subtitle={selected ? `${selected.region} • ${selected.product} • ${formatChannelLabel(selected.channel)}` : ""}
+      >
+        {selected ? (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <Metric label="Score" value={`${selected.score}`} />
+              <Metric label="Confianza" value={`${selected.confidence}%`} />
+              <Metric label="Potencial de ingresos" value={selected.revenuePotential} />
+              <Metric label="Potencial de margen" value={`${selected.marginPotential}`} />
             </div>
-          </div>
-        </div>
-
-        <div className="rounded-3xl border border-accent/20 bg-accent/10 p-5">
-          <p className="text-[11px] uppercase tracking-[0.16em] text-accent">Recommended move</p>
-          <p className="mt-3 text-base leading-7 text-slate-100">{selected.action}</p>
-        </div>
-
-        <div className="space-y-3">
-          {selected.rationale.map((item, index) => (
-            <div key={item} className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-4">
-              <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Driver {index + 1}</p>
-              <p className="mt-2 text-sm text-slate-300">{item}</p>
+            <div className="rounded-2xl border border-white/10 bg-[#09101F] p-4">
+              <p className="text-[11px] uppercase tracking-[0.16em] text-accent">Por qué importa</p>
+              <p className="mt-2 text-sm text-slate-200">{selected.description}</p>
             </div>
-          ))}
-        </div>
-
-        <Card className="border-white/10 bg-[#09101F]">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-xl">Action plan</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Button className="w-full justify-between" onClick={onGeneratePlan}>
-              <span>Generar plan</span>
-              <WandSparkles className="h-4 w-4" />
-            </Button>
             <div className="space-y-3">
-              {(plan ?? dashboardData.recommendedActions.slice(0, 3)).map((item, index) => (
-                <div key={`${item}-${index}`} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-                  <p className="text-[11px] uppercase tracking-[0.16em] text-accent">
-                    {plan ? `Paso ${index + 1}` : `Action ${index + 1}`}
-                  </p>
+              {selected.rationale.map((item, index) => (
+                <div key={item} className="rounded-2xl border border-white/10 bg-[#09101F] p-4">
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Señal {index + 1}</p>
                   <p className="mt-2 text-sm text-slate-200">{item}</p>
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
-      </CardContent>
-    </Card>
-  );
-}
-
-function CompactStat({ title, value, detail }: { title: string; value: string; detail: string }) {
-  return (
-    <Card className="overflow-hidden border-white/10 bg-white/[0.04]">
-      <CardContent className="relative p-5">
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent to-transparent opacity-70" />
-        <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">{title}</p>
-        <div className="mt-4 flex items-end justify-between gap-4">
-          <p className="font-display text-4xl text-white">{value}</p>
-          <p className="text-sm text-slate-400">{detail}</p>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function CompactList({
-  title,
-  items,
-  onSelect
-}: {
-  title: string;
-  items: OpportunityCard[];
-  onSelect: (item: OpportunityCard) => void;
-}) {
-  return (
-    <Card className="border-white/10 bg-white/[0.04]">
-      <CardHeader>
-        <CardTitle className="text-xl">{title}</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {items.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => onSelect(item)}
-            className="w-full rounded-2xl border border-white/10 bg-[#09101F] p-4 text-left transition hover:border-white/20"
-          >
-            <div className="flex items-center justify-between gap-4">
-              <p className="text-sm text-white">{item.region}</p>
-              <StatusChip label={item.type === "Riesgo" ? "Watchlist" : "Alta prioridad"} />
+            <div className="rounded-2xl border border-white/10 bg-[#09101F] p-4">
+              <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Recomendación ejecutiva</p>
+              <p className="mt-2 text-sm text-slate-200">{selected.action}</p>
             </div>
-            <p className="mt-2 text-xs uppercase tracking-[0.16em] text-slate-500">
-              {item.product} • {formatChannelLabel(item.channel)}
-            </p>
-            <p className="mt-3 text-sm text-slate-300">{item.action}</p>
-          </button>
-        ))}
-      </CardContent>
-    </Card>
-  );
-}
-
-function SignalMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-[#09101F] px-4 py-4">
-      <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">{label}</p>
-      <p className="mt-2 text-xl text-white">{value}</p>
+          </div>
+        ) : null}
+      </DetailPanel>
     </div>
   );
 }
 
-function MetricChip({ label, value }: { label: string; value: string }) {
+function MetricCard({
+  title,
+  value,
+  detail,
+  icon: Icon
+}: {
+  title: string;
+  value: string;
+  detail: string;
+  icon: typeof Sparkles;
+}) {
   return (
-    <div className="rounded-2xl bg-white/[0.04] px-4 py-3">
-      <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">{label}</p>
-      <p className="mt-2 text-sm text-white">{value}</p>
+    <Card className="border-white/10 bg-white/[0.04]">
+      <CardContent className="space-y-3 p-5">
+        <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-slate-400">
+          <Icon className="h-4 w-4" />
+          {title}
+        </div>
+        <p className="font-display text-3xl text-white">{value}</p>
+        <p className="text-sm text-slate-400">{detail}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-[#09101F] p-4">
+      <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">{label}</p>
+      <p className="mt-2 text-lg text-white">{value}</p>
     </div>
   );
 }

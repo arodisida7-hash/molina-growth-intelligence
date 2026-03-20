@@ -31,8 +31,8 @@ export function OpportunityMapPage() {
     <div className="space-y-8">
       <PageHeader
         eyebrow="Mapa de Oportunidad"
-        title="Prioridades regionales para expansion inteligente"
-        description="Mapa ejecutivo de Mexico estilizado para ordenar demanda, penetracion, margen potencial y riesgo de inventario en una sola lectura."
+        title="Prioridades regionales"
+        description="Qué región escalar, cuál vigilar y dónde hay más retorno incremental."
       />
 
       <section className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
@@ -40,7 +40,7 @@ export function OpportunityMapPage() {
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle>Mapa de oportunidad regional</CardTitle>
-              <p className="mt-2 text-sm text-slate-400">Selecciona una plaza para actualizar la recomendacion accionable.</p>
+              <p className="mt-2 text-sm text-slate-400">Selecciona una plaza para actualizar la recomendación accionable.</p>
             </div>
             <Badge variant="accent">Score compuesto</Badge>
           </CardHeader>
@@ -87,7 +87,7 @@ export function OpportunityMapPage() {
           <CardHeader>
             <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-accent">
               <Radar className="h-4 w-4" />
-              Recomendacion actual
+              Recomendación actual
             </div>
             <CardTitle className="text-3xl">{selected?.region ?? "Shortlist regional"}</CardTitle>
           </CardHeader>
@@ -101,15 +101,15 @@ export function OpportunityMapPage() {
                   <MetricTile label="Salud" value={`${selected.distributorHealth}/100`} />
                 </div>
                 <div className="rounded-3xl border border-accent/20 bg-accent/10 p-5">
-                  <p className="text-xs uppercase tracking-[0.18em] text-accent">Lectura estrategica</p>
+                  <p className="text-xs uppercase tracking-[0.18em] text-accent">Lectura estratégica</p>
                   <p className="mt-3 text-sm leading-7 text-slate-100">{selected.recommendation}</p>
                 </div>
                 <div className="grid gap-3">
                   {[
                     ["Demanda", selected.demandIndex],
-                    ["Penetracion", selected.penetrationIndex],
+                    ["Penetración", selected.penetrationIndex],
                     ["Margen potencial", selected.marginPotential],
-                    ["Stock risk inverso", 100 - selected.stockRisk]
+                    ["Stock inverso", 100 - selected.stockRisk]
                   ].map(([label, value]) => (
                     <div key={String(label)} className="rounded-2xl bg-[#09101F] p-4">
                       <div className="mb-2 flex items-center justify-between text-sm text-slate-300">
@@ -124,11 +124,11 @@ export function OpportunityMapPage() {
                   className="w-full justify-between"
                   onClick={() =>
                     setActivationMessage(
-                      `Se priorizo ${selected.region} para activacion comercial con foco en ${formatChannelLabel(selected.dominantChannel)}.`
+                      `Se priorizó ${selected.region} para activación comercial con foco en ${formatChannelLabel(selected.dominantChannel)}.`
                     )
                   }
                 >
-                  <span>Activar recomendacion regional</span>
+                  <span>Activar recomendación regional</span>
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </>
@@ -145,7 +145,7 @@ export function OpportunityMapPage() {
           <CardHeader>
             <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-slate-400">
               <Map className="h-4 w-4" />
-              5 oportunidades lideres
+              5 oportunidades líderes
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -164,7 +164,7 @@ export function OpportunityMapPage() {
         </Card>
         <Card className="border-white/10 bg-white/[0.04]">
           <CardHeader>
-            <CardTitle>Desglose del indice de oportunidad</CardTitle>
+            <CardTitle>Desglose del índice de oportunidad</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {dashboardData.regions.map((region) => (
@@ -180,7 +180,7 @@ export function OpportunityMapPage() {
                   <ScoreLine label="Demanda" value={region.demandIndex} />
                   <ScoreLine label="Afinidad de contenido" value={region.contentEngagement} />
                   <ScoreLine label="Margen" value={region.marginPotential} />
-                  <ScoreLine label="Riesgo de stock inverso" value={100 - region.stockRisk} />
+                  <ScoreLine label="Stock inverso" value={100 - region.stockRisk} />
                 </div>
               </div>
             ))}

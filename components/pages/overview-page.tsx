@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowRight, ArrowUpRight, BellRing, ChartColumnIncreasing, DatabaseZap, Sparkles } from "lucide-react";
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { AlertTriangle, ArrowUpRight, BriefcaseBusiness, CircleDollarSign, Gauge, MapPinned } from "lucide-react";
 
-import { DetailPanel } from "@/components/common/detail-panel";
 import { MiniBar } from "@/components/common/mini-bar";
 import { PageHeader } from "@/components/common/page-header";
 import { SearchInput } from "@/components/common/search-input";
@@ -13,82 +13,120 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { dashboardData } from "@/lib/mock-data";
 import { formatChannelLabel, formatCompactCurrency, formatPercent } from "@/lib/utils";
 
-type OpportunityRow = {
+type DecisionFilter = "Todas" | "Prioridad alta" | "Riesgo";
+
+type DecisionRow = {
   id: string;
   region: string;
   product: string;
   channel: string;
-  opportunityScore: number;
-  marginPotential: number;
-  status: string;
+  score: number;
+  status: "Prioridad alta" | "Riesgo" | "Seguimiento";
+  impact: string;
   action: string;
-  impactRange: string;
-  rationale: string[];
+  why: string[];
 };
+
+function getDecisionStatus(score: number, type: "Oportunidad" | "Riesgo"): DecisionRow["status"] {
+  if (type === "Riesgo") return "Riesgo";
+  if (score >= 85) return "Prioridad alta";
+  return "Seguimiento";
+}
 
 export function OverviewPage() {
   const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"Todos" | "Alta prioridad" | "Watchlist">("Todos");
-  const [selectedKpi, setSelectedKpi] = useState<null | "revenue" | "margin" | "marketing" | "growth">(null);
-  const [selectedOpportunityId, setSelectedOpportunityId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<DecisionFilter>("Todas");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const opportunityRows = useMemo<OpportunityRow[]>(() => {
-    return dashboardData.opportunities.map((item) => {
-      const region = dashboardData.regions.find((regionItem) => regionItem.region === item.region);
-      const status = item.type === "Riesgo" ? "Watchlist" : item.score >= 85 ? "Alta prioridad" : "Seguimiento";
-
-      return {
-        id: item.id,
-        region: item.region,
-        product: item.product,
-        channel: formatChannelLabel(item.channel),
-        opportunityScore: item.score,
-        marginPotential: region?.marginPotential ?? 0,
-        status,
-        action: item.action,
-        impactRange: item.impactRange,
-        rationale: item.rationale
-      };
-    });
-  }, []);
+  const decisionRows = useMemo<DecisionRow[]>(
+    () =>
+      dashboardData.opportunities
+        .map((item) => ({
+          id: item.id,
+          region: item.region,
+          product: item.product,
+          channel: formatChannelLabel(item.channel),
+          score: item.score,
+          status: getDecisionStatus(item.score, item.type),
+          impact: item.impactRange,
+          action: item.action,
+          why: item.rationale
+        }))
+        .sort((left, right) => right.score - left.score),
+    []
+  );
 
   const filteredRows = useMemo(() => {
     const value = query.trim().toLowerCase();
 
-    return opportunityRows.filter((row) => {
+    return decisionRows.filter((row) => {
       const matchesQuery =
         !value ||
         `${row.region} ${row.product} ${row.channel} ${row.action}`.toLowerCase().includes(value);
-      const matchesStatus = statusFilter === "Todos" || row.status === statusFilter;
-      return matchesQuery && matchesStatus;
+      const matchesFilter = filter === "Todas" || row.status === filter;
+      return matchesQuery && matchesFilter;
     });
-  }, [opportunityRows, query, statusFilter]);
+  }, [decisionRows, filter, query]);
 
-  const topPriorities = filteredRows.filter((row) => row.status === "Alta prioridad").slice(0, 3);
-  const selectedOpportunity =
-    opportunityRows.find((row) => row.id === selectedOpportunityId) ?? topPriorities[0] ?? filteredRows[0] ?? opportunityRows[0];
-  const watchlist = dashboardData.alerts.slice(0, 3);
+  const selected = filteredRows.find((row) => row.id === selectedId) ?? filteredRows[0] ?? decisionRows[0];
+  const topDecisions = decisionRows.slice(0, 3);
+  const riskRows = decisionRows.filter((row) => row.status === "Riesgo").slice(0, 3);
+  const regionsReady = dashboardData.regions.filter((region) => region.opportunityScore >= 80).length;
+  const revenueAtRisk = dashboardData.opportunities
+    .filter((item) => item.type === "Riesgo")
+    .map((item) => item.impactRange)
+    .join(" • ");
 
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Overview"
-        title="Executive Overview"
-        description="Oportunidades priorizadas, impacto esperado y lectura comercial accionable."
+        eyebrow="Resumen ejecutivo"
+        title="Decisiones comerciales prioritarias"
+        description="Qué revisar esta semana, dónde actuar y qué impacto podría generar."
       />
 
-      <section className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <ExecutiveKpi
+          icon={CircleDollarSign}
+          title="Ingresos en oportunidad"
+          value={dashboardData.impactPotential.salesLift}
+          detail={revenueAtRisk ? `Riesgo visible: ${revenueAtRisk}` : "Sin riesgo crítico esta semana"}
+        />
+        <ExecutiveKpi
+          icon={Gauge}
+          title="Salud de margen"
+          value={formatPercent(dashboardData.kpis.grossMargin)}
+          detail="Promedio del portafolio"
+        />
+        <ExecutiveKpi
+          icon={MapPinned}
+          title="Regiones listas para escalar"
+          value={`${regionsReady}`}
+          detail="Con demanda y margen arriba del umbral"
+        />
+        <ExecutiveKpi
+          icon={BriefcaseBusiness}
+          title="Eficiencia de marketing"
+          value={`${dashboardData.kpis.marketingEfficiency}`}
+          detail="Índice comercial ponderado"
+        />
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
         <Card className="border-white/10 bg-white/[0.04]">
           <CardHeader className="gap-4 border-b border-white/10 pb-5">
             <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-              <CardTitle className="text-3xl">Top Commercial Opportunities</CardTitle>
+              <div>
+                <CardTitle className="text-2xl">Top decisiones esta semana</CardTitle>
+                <p className="mt-1 text-sm text-slate-400">Tres frentes que dirección debería revisar primero.</p>
+              </div>
               <div className="flex flex-wrap gap-2">
-                {["Todos", "Alta prioridad", "Watchlist"].map((option) => (
+                {["Todas", "Prioridad alta", "Riesgo"].map((option) => (
                   <button
                     key={option}
-                    onClick={() => setStatusFilter(option as "Todos" | "Alta prioridad" | "Watchlist")}
+                    onClick={() => setFilter(option as DecisionFilter)}
                     className={`rounded-full border px-3 py-1.5 text-xs uppercase tracking-[0.16em] transition ${
-                      statusFilter === option
+                      filter === option
                         ? "border-accent/30 bg-accent/10 text-accent"
                         : "border-white/10 bg-white/[0.03] text-slate-400 hover:text-white"
                     }`}
@@ -101,47 +139,37 @@ export function OverviewPage() {
             <SearchInput
               value={query}
               onChange={setQuery}
-              placeholder="Buscar producto, region, campana u oportunidad..."
+              placeholder="Buscar región, producto, canal u oportunidad..."
               className="max-w-full"
             />
           </CardHeader>
           <CardContent className="grid gap-3 pt-6">
-            {topPriorities.map((item) => {
-              const active = selectedOpportunity.id === item.id;
+            {topDecisions.map((row) => {
+              const active = selected?.id === row.id;
 
               return (
                 <button
-                  key={item.id}
-                  onClick={() => setSelectedOpportunityId(item.id)}
-                  className={`group relative overflow-hidden rounded-[28px] border p-5 text-left transition duration-300 ${
+                  key={row.id}
+                  onClick={() => setSelectedId(row.id)}
+                  className={`rounded-3xl border p-5 text-left transition ${
                     active
-                      ? "border-accent/30 bg-gradient-to-br from-[#0B1528] via-[#0A1021] to-[#10243B] shadow-[0_20px_60px_rgba(0,0,0,0.35)]"
-                      : "border-white/10 bg-[#09101F] hover:-translate-y-1 hover:border-white/20"
+                      ? "border-accent/30 bg-gradient-to-br from-[#0B1528] via-[#0A1021] to-[#10243B]"
+                      : "border-white/10 bg-[#09101F] hover:border-white/20"
                   }`}
                 >
-                  <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent to-transparent opacity-70" />
-                  <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr] xl:items-center">
-                    <div className="space-y-3">
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="text-lg font-medium text-white">{item.region}</p>
-                          <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">{item.product}</p>
-                        </div>
-                        <div className="shrink-0">
-                          <StatusChip label={item.status} />
-                        </div>
-                      </div>
-                      <p className="clamp-2 text-sm leading-7 text-slate-300">{item.action}</p>
-                      <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-accent">
-                        Abrir decision canvas
-                        <ArrowRight className="h-4 w-4" />
-                      </div>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-2">
+                      <p className="text-lg font-medium text-white">
+                        {row.region} — {row.product}
+                      </p>
+                      <p className="text-xs uppercase tracking-[0.16em] text-slate-500">{row.channel}</p>
                     </div>
-                    <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
-                      <MetricChip label="Canal" value={item.channel} />
-                      <MetricChip label="Impacto" value={item.impactRange} />
-                      <ScoreTile value={item.opportunityScore} />
-                    </div>
+                    <StatusChip label={row.status} />
+                  </div>
+                  <div className="mt-4 grid gap-3 md:grid-cols-[1fr_120px_120px]">
+                    <p className="text-sm leading-6 text-slate-300">{row.action}</p>
+                    <DecisionMetric label="Impacto" value={row.impact} />
+                    <DecisionMetric label="Score" value={`${row.score}`} />
                   </div>
                 </button>
               );
@@ -149,336 +177,205 @@ export function OverviewPage() {
           </CardContent>
         </Card>
 
-        <DecisionCanvas selectedOpportunity={selectedOpportunity} />
+        <div className="grid gap-4">
+          <Card className="border-white/10 bg-white/[0.04]">
+            <CardHeader>
+              <CardTitle>Impacto potencial estimado</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-3">
+              <ImpactTile label="Mejora de ingresos" value={dashboardData.impactPotential.salesLift} />
+              <ImpactTile label="Optimización de margen" value={dashboardData.impactPotential.marginLift} />
+              <ImpactTile label="Ganancia de eficiencia" value={dashboardData.impactPotential.marketingLift} />
+              <p className="text-xs text-slate-500">{dashboardData.impactPotential.note}</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-white/10 bg-white/[0.04]">
+            <CardHeader>
+              <CardTitle>Fuentes conectadas</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-wrap gap-2">
+              {dashboardData.connectedSources.map((source) => (
+                <div key={source.name} className="rounded-full border border-white/10 bg-[#09101F] px-3 py-2 text-xs uppercase tracking-[0.16em] text-slate-300">
+                  {source.name}
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <KpiCard title="Revenue YTD" value={formatCompactCurrency(dashboardData.kpis.revenueYtd)} delta={dashboardData.kpis.growth} onClick={() => setSelectedKpi("revenue")} />
-        <KpiCard title="Gross Margin" value={formatPercent(dashboardData.kpis.grossMargin)} delta={0.8} onClick={() => setSelectedKpi("margin")} />
-        <KpiCard title="Growth" value={formatPercent(dashboardData.kpis.growth)} delta={2.4} onClick={() => setSelectedKpi("growth")} />
-        <KpiCard title="Marketing Index" value={`${dashboardData.kpis.marketingEfficiency}`} delta={4.1} onClick={() => setSelectedKpi("marketing")} />
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+      <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
         <Card className="border-white/10 bg-white/[0.04]">
           <CardHeader className="border-b border-white/10 pb-5">
             <div className="flex items-center justify-between gap-4">
-              <CardTitle>Opportunity Table</CardTitle>
-              <p className="text-xs uppercase tracking-[0.16em] text-slate-500">{filteredRows.length} rows</p>
+              <CardTitle>Tabla de oportunidades</CardTitle>
+              <div className="rounded-full border border-white/10 bg-[#09101F] px-3 py-1.5 text-xs uppercase tracking-[0.16em] text-slate-400">
+                {filteredRows.length} filas
+              </div>
             </div>
           </CardHeader>
           <CardContent className="overflow-x-auto scroll-clean pt-6">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Region</TableHead>
+                  <TableHead>Región</TableHead>
                   <TableHead>Producto</TableHead>
                   <TableHead>Canal</TableHead>
                   <TableHead>Score</TableHead>
                   <TableHead>Impacto</TableHead>
                   <TableHead>Estado</TableHead>
-                  <TableHead>Accion</TableHead>
+                  <TableHead>Acción sugerida</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredRows.map((row) => {
-                  const active = selectedOpportunity.id === row.id;
-
-                  return (
-                    <TableRow
-                      key={row.id}
-                      className={`cursor-pointer transition ${active ? "bg-accent/10" : ""}`}
-                      onClick={() => setSelectedOpportunityId(row.id)}
-                    >
-                      <TableCell className="font-medium text-white">{row.region}</TableCell>
-                      <TableCell>{row.product}</TableCell>
-                      <TableCell>{row.channel}</TableCell>
-                      <TableCell>
-                        <div className="space-y-2">
-                          <span>{row.opportunityScore}</span>
-                          <MiniBar value={row.opportunityScore} tone={row.status === "Watchlist" ? "rose" : "accent"} />
-                        </div>
-                      </TableCell>
-                      <TableCell>{row.impactRange}</TableCell>
-                      <TableCell>
-                        <StatusChip label={row.status} />
-                      </TableCell>
-                      <TableCell className="max-w-[320px] text-slate-300">{row.action}</TableCell>
-                    </TableRow>
-                  );
-                })}
+                {filteredRows.map((row) => (
+                  <TableRow key={row.id} className="cursor-pointer" onClick={() => setSelectedId(row.id)}>
+                    <TableCell className="font-medium text-white">{row.region}</TableCell>
+                    <TableCell>{row.product}</TableCell>
+                    <TableCell>{row.channel}</TableCell>
+                    <TableCell>
+                      <div className="space-y-2">
+                        <span>{row.score}</span>
+                        <MiniBar value={row.score} tone={row.status === "Riesgo" ? "rose" : "accent"} />
+                      </div>
+                    </TableCell>
+                    <TableCell>{row.impact}</TableCell>
+                    <TableCell>
+                      <StatusChip label={row.status} />
+                    </TableCell>
+                    <TableCell className="max-w-[340px] text-slate-300">{row.action}</TableCell>
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
           </CardContent>
         </Card>
 
-        <div className="grid gap-4">
-          <Card className="border-white/10 bg-white/[0.04]">
-            <CardHeader>
-              <CardTitle>Estimated Business Impact</CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-3">
-              <ImpactTile value={dashboardData.impactPotential.salesLift} label="Revenue uplift" detail="Expansión regional acelerada" />
-              <ImpactTile value={dashboardData.impactPotential.marginLift} label="Margin optimization" detail="Mejor mezcla de portafolio" />
-              <ImpactTile value={dashboardData.impactPotential.marketingLift} label="Marketing efficiency" detail="Inversión mejor reasignada" />
-            </CardContent>
-          </Card>
-
-          <Card className="surface-highlight border-white/10 bg-white/[0.04]">
-            <CardHeader>
-              <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-accent">
-                <Sparkles className="h-4 w-4" />
-                Weekly Brief
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <BriefItem label="Opportunity" value={dashboardData.executiveBrief.bullets[0]} />
-              <BriefItem label="Margin" value={dashboardData.executiveBrief.bullets[2]} />
-              <BriefItem label="Action" value={dashboardData.recommendedActions[0]} />
-            </CardContent>
-          </Card>
-
-          <Card className="border-white/10 bg-white/[0.04]">
-            <CardHeader>
-              <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-amber-200">
-                <BellRing className="h-4 w-4" />
-                Watchlist
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {watchlist.map((item) => (
-                <button
-                  key={item.title}
-                  onClick={() => setStatusFilter("Watchlist")}
-                  className="w-full rounded-2xl border border-white/10 bg-[#09101F] p-4 text-left transition hover:border-white/20"
-                >
-                  <div className="flex items-center justify-between gap-4">
-                    <p className="text-sm text-white">{item.title}</p>
-                    <StatusChip label={item.level} />
-                  </div>
-                  <p className="mt-2 text-sm text-slate-400">{item.detail}</p>
-                </button>
+        <Card className="border-white/10 bg-white/[0.04]">
+          <CardHeader className="border-b border-white/10 pb-5">
+            <CardTitle>Detalle ejecutivo</CardTitle>
+            <p className="text-sm text-slate-400">
+              {selected.region} • {selected.product} • {selected.channel}
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4 pt-6">
+            <div className="grid grid-cols-2 gap-3">
+              <DecisionMetric label="Score" value={`${selected.score}`} />
+              <DecisionMetric label="Impacto" value={selected.impact} />
+            </div>
+            <div className="rounded-3xl border border-accent/20 bg-accent/10 p-5">
+              <p className="text-xs uppercase tracking-[0.18em] text-accent">Acción sugerida</p>
+              <p className="mt-3 text-sm leading-7 text-slate-100">{selected.action}</p>
+            </div>
+            <div className="space-y-3">
+              {selected.why.map((item, index) => (
+                <div key={item} className="rounded-2xl border border-white/10 bg-[#09101F] px-4 py-4">
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Señal {index + 1}</p>
+                  <p className="mt-2 text-sm text-slate-300">{item}</p>
+                </div>
               ))}
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+      <section className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
         <Card className="border-white/10 bg-white/[0.04]">
           <CardHeader>
-            <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-accent">
-              <DatabaseZap className="h-4 w-4" />
-              Connected enterprise data sources
-            </div>
+            <CardTitle>Vigilancia</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-3 md:grid-cols-2">
-            {dashboardData.connectedSources.map((source) => (
-              <CompactSourceRow key={source.name} name={source.name} category={source.category} />
+          <CardContent className="space-y-3">
+            {riskRows.map((row) => (
+              <button
+                key={row.id}
+                onClick={() => setSelectedId(row.id)}
+                className="w-full rounded-2xl border border-white/10 bg-[#09101F] p-4 text-left transition hover:border-white/20"
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <p className="text-sm text-white">{row.region}</p>
+                  <StatusChip label={row.status} />
+                </div>
+                <p className="mt-2 text-xs uppercase tracking-[0.16em] text-slate-500">{row.product}</p>
+                <p className="mt-3 text-sm text-slate-300">{row.action}</p>
+              </button>
             ))}
           </CardContent>
         </Card>
 
         <Card className="border-white/10 bg-white/[0.04]">
           <CardHeader>
-            <CardTitle>Commercial Context</CardTitle>
+            <CardTitle>Tendencia de ingreso</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-3">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Channel mix</p>
-              {dashboardData.channelMix.map((item) => (
-                <MetricListRow key={item.channel} label={formatChannelLabel(item.channel)} value={`${item.value}%`} barValue={item.value} />
-              ))}
-            </div>
-            <div className="space-y-3">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Margin by family</p>
-              {dashboardData.products.slice(0, 5).map((item) => (
-                <MetricListRow
-                  key={item.family}
-                  label={item.family}
-                  value={formatPercent(item.grossMargin)}
-                  barValue={Math.round(item.grossMargin)}
-                />
-              ))}
+          <CardContent>
+            <div className="h-[220px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={dashboardData.months} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+                  <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
+                  <XAxis dataKey="month" stroke="#8E9AB7" tickLine={false} axisLine={false} />
+                  <YAxis
+                    stroke="#8E9AB7"
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(value) => `${Math.round(Number(value) / 1000000)}M`}
+                  />
+                  <Tooltip
+                    contentStyle={{ background: "#09101f", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 18 }}
+                    formatter={(value) => [formatCompactCurrency(Number(value)), "Ingresos"]}
+                  />
+                  <Line type="monotone" dataKey="revenue" stroke="#5AD7C4" strokeWidth={3} dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
       </section>
-
-      <DetailPanel
-        open={selectedKpi !== null}
-        onClose={() => setSelectedKpi(null)}
-        title={
-          selectedKpi === "revenue"
-            ? "Revenue"
-            : selectedKpi === "margin"
-              ? "Margin"
-              : selectedKpi === "marketing"
-                ? "Marketing"
-                : "Growth"
-        }
-        subtitle="Drivers ejecutivos"
-      >
-        <div className="space-y-4">
-          <PanelMetric label="Revenue YTD" value={formatCompactCurrency(dashboardData.kpis.revenueYtd)} />
-          <PanelMetric label="Growth" value={formatPercent(dashboardData.kpis.growth)} />
-          <PanelMetric label="Gross Margin" value={formatPercent(dashboardData.kpis.grossMargin)} />
-          <PanelMetric label="Marketing Index" value={`${dashboardData.kpis.marketingEfficiency}`} />
-          <div className="rounded-2xl border border-white/10 bg-[#09101F] p-4">
-            <p className="text-[11px] uppercase tracking-[0.16em] text-accent">Quick read</p>
-            <p className="mt-2 text-sm text-slate-300">
-              {selectedKpi === "revenue" && "Crecimiento concentrado en lineas naturales y regiones con baja penetracion."}
-              {selectedKpi === "margin" && "La presion de margen se concentra en familias defensivas."}
-              {selectedKpi === "marketing" && "Recetas y premium concentran el mejor retorno."}
-              {selectedKpi === "growth" && "Monterrey, Queretaro y Cancun lideran el retorno incremental."}
-            </p>
-          </div>
-        </div>
-      </DetailPanel>
     </div>
   );
 }
 
-function CompactSourceRow({ name, category }: { name: string; category?: string }) {
+function ExecutiveKpi({
+  icon: Icon,
+  title,
+  value,
+  detail
+}: {
+  icon: typeof CircleDollarSign;
+  title: string;
+  value: string;
+  detail: string;
+}) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-[#09101F] px-4 py-3">
-      <p className="text-xs uppercase tracking-[0.18em] text-white">{name}</p>
-      {category ? <p className="mt-2 text-sm text-slate-400">{category}</p> : null}
-    </div>
-  );
-}
-
-function MetricListRow({ label, value, barValue }: { label: string; value: string; barValue: number }) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-[#09101F] px-4 py-3">
-      <div className="flex items-center justify-between gap-4 text-sm">
-        <span className="text-slate-300">{label}</span>
-        <span className="text-white">{value}</span>
-      </div>
-      <MiniBar value={barValue} className="mt-3" />
-    </div>
-  );
-}
-
-function DecisionCanvas({ selectedOpportunity }: { selectedOpportunity: OpportunityRow }) {
-  return (
-    <Card className="surface-highlight border-white/10 bg-gradient-to-br from-[#0B1528] via-[#0A1021] to-[#10243B]">
-      <CardHeader className="border-b border-white/10 pb-5">
-        <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-accent">
-          <ChartColumnIncreasing className="h-4 w-4" />
-          Decision canvas
+    <Card className="border-white/10 bg-white/[0.04]">
+      <CardContent className="space-y-3 p-5">
+        <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-slate-400">
+          <Icon className="h-4 w-4" />
+          {title}
         </div>
-        <CardTitle className="text-3xl text-white">{selectedOpportunity.region}</CardTitle>
-        <p className="text-sm text-slate-400">
-          {selectedOpportunity.product} • {selectedOpportunity.channel}
-        </p>
-      </CardHeader>
-      <CardContent className="space-y-4 pt-6">
-        <div className="grid grid-cols-2 gap-3">
-          <PanelMetric label="Score" value={`${selectedOpportunity.opportunityScore}`} />
-          <PanelMetric label="Margen" value={`${selectedOpportunity.marginPotential}`} />
-          <PanelMetric label="Impacto" value={selectedOpportunity.impactRange} />
-          <div className="rounded-2xl border border-white/10 bg-[#09101F] px-4 py-4">
-            <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Estado</p>
-            <div className="mt-3">
-              <StatusChip label={selectedOpportunity.status} />
-            </div>
-          </div>
+        <div className="flex items-center justify-between gap-4">
+          <p className="font-display text-3xl text-white">{value}</p>
+          <ArrowUpRight className="h-5 w-5 text-accent" />
         </div>
-        <div className="rounded-3xl border border-accent/20 bg-accent/10 p-5">
-          <p className="text-[11px] uppercase tracking-[0.16em] text-accent">Next move</p>
-          <p className="mt-3 text-base leading-7 text-slate-100">{selectedOpportunity.action}</p>
-        </div>
-        <div className="space-y-3">
-          {selectedOpportunity.rationale.map((item, index) => (
-            <div key={item} className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-4">
-              <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Signal {index + 1}</p>
-              <p className="mt-2 text-sm text-slate-300">{item}</p>
-            </div>
-          ))}
-        </div>
+        <p className="text-sm text-slate-400">{detail}</p>
       </CardContent>
     </Card>
   );
 }
 
-function ImpactTile({ value, label, detail }: { value: string; label: string; detail: string }) {
+function ImpactTile({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-[28px] border border-white/10 bg-[#09101F] p-5">
-      <p className="font-display text-4xl tracking-tight text-white">{value}</p>
-      <p className="mt-3 text-[11px] uppercase tracking-[0.18em] text-slate-500">{label}</p>
-      <p className="mt-3 text-sm text-slate-400">{detail}</p>
+      <p className="font-display text-3xl tracking-tight text-white">{value}</p>
+      <p className="mt-2 text-[11px] uppercase tracking-[0.18em] text-slate-500">{label}</p>
     </div>
   );
 }
 
-function MetricChip({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl bg-white/[0.04] px-4 py-3">
-      <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">{label}</p>
-      <p className="mt-2 text-sm text-white">{value}</p>
-    </div>
-  );
-}
-
-function ScoreTile({ value }: { value: number }) {
-  return (
-    <div className="rounded-2xl bg-white/[0.04] px-4 py-3">
-      <div className="flex items-center justify-between gap-4">
-        <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Score</p>
-        <div className="inline-flex items-center gap-1 text-sm text-white">
-          {value}
-          <ArrowUpRight className="h-4 w-4 text-emerald-300" />
-        </div>
-      </div>
-      <MiniBar value={value} className="mt-3" />
-    </div>
-  );
-}
-
-function BriefItem({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-[#09101F] px-4 py-4">
-      <p className="text-[11px] uppercase tracking-[0.16em] text-accent">{label}</p>
-      <p className="mt-2 text-sm text-slate-200">{value}</p>
-    </div>
-  );
-}
-
-function KpiCard({
-  title,
-  value,
-  delta,
-  onClick
-}: {
-  title: string;
-  value: string;
-  delta: number;
-  onClick: () => void;
-}) {
-  return (
-    <button onClick={onClick} className="text-left">
-      <Card className="border-white/10 bg-white/[0.03] transition duration-300 hover:-translate-y-1 hover:border-white/20">
-        <CardContent className="space-y-3 p-5">
-          <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">{title}</p>
-          <div className="flex items-center justify-between gap-4">
-            <p className="font-display text-3xl tracking-tight text-white">{value}</p>
-            <div className="inline-flex items-center gap-1 rounded-full bg-emerald-400/10 px-3 py-1 text-xs text-emerald-200">
-              <ArrowUpRight className="h-4 w-4" />
-              {delta.toFixed(1)}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </button>
-  );
-}
-
-function PanelMetric({ label, value }: { label: string; value: string }) {
+function DecisionMetric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-[#09101F] px-4 py-4">
       <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">{label}</p>
-      <p className="mt-2 text-2xl text-white">{value}</p>
+      <p className="mt-2 text-lg text-white">{value}</p>
     </div>
   );
 }

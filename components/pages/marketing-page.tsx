@@ -2,9 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { Megaphone, Radar, Target, TriangleAlert, type LucideIcon } from "lucide-react";
+import { Megaphone, Target, TrendingUp, TriangleAlert } from "lucide-react";
 
-import { ChartCard } from "@/components/common/chart-card";
 import { DetailPanel } from "@/components/common/detail-panel";
 import { MiniBar } from "@/components/common/mini-bar";
 import { PageHeader } from "@/components/common/page-header";
@@ -16,228 +15,280 @@ import { dashboardData } from "@/lib/mock-data";
 import { CampaignMetric } from "@/lib/types";
 import { formatChannelLabel, formatCompactCurrency } from "@/lib/utils";
 
-const spendByChannel = dashboardData.campaigns.reduce<Record<string, number>>((accumulator, campaign) => {
-  accumulator[campaign.channel] = (accumulator[campaign.channel] ?? 0) + campaign.spend;
-  return accumulator;
-}, {});
-
-const spendData = Object.entries(spendByChannel).map(([channel, spend]) => ({ channel, spend }));
-
-const contentData = dashboardData.campaigns.map((campaign) => ({
-  type: campaign.type,
-  engagement: campaign.engagement,
-  roas: campaign.roas * 15
-}));
-
-const regionByCampaign: Record<string, string> = {
-  "cmp-recetas": "Queretaro",
+const campaignRegion: Record<string, string> = {
+  "cmp-recetas": "Querétaro",
   "cmp-estacional": "CDMX",
   "cmp-premium": "Monterrey",
   "cmp-producto": "Guadalajara",
-  "cmp-b2b": "Cancun"
+  "cmp-b2b": "Cancún"
 };
 
-type CampaignStatus = "Todos" | "Escalar" | "Optimizar";
+type CampaignFilter = "Todas" | "Escalar" | "Vigilancia";
+type SortKey = "spend" | "cac" | "roas";
+
+type CampaignRow = CampaignMetric & {
+  region: string;
+  status: "Escalar" | "Vigilancia";
+  impact: string;
+};
+
+function getCampaignStatus(roas: number, cac: number): CampaignRow["status"] {
+  return roas >= 5 && cac < 220 ? "Escalar" : "Vigilancia";
+}
 
 export function MarketingIntelligencePage() {
   const [query, setQuery] = useState("");
-  const [status, setStatus] = useState<CampaignStatus>("Todos");
-  const [selected, setSelected] = useState<CampaignMetric | null>(null);
+  const [filter, setFilter] = useState<CampaignFilter>("Todas");
+  const [sortKey, setSortKey] = useState<SortKey>("roas");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const rows = useMemo(() => {
+  const rows = useMemo<CampaignRow[]>(
+    () =>
+      dashboardData.campaigns.map((campaign) => ({
+        ...campaign,
+        region: campaignRegion[campaign.id] ?? "CDMX",
+        status: getCampaignStatus(campaign.roas, campaign.cac),
+        impact: campaign.roas >= 5 ? "+$2.1M - +$3.4M" : "-$0.8M - -$0.3M"
+      })),
+    []
+  );
+
+  const filteredRows = useMemo(() => {
     const value = query.trim().toLowerCase();
 
-    return dashboardData.campaigns.filter((campaign) => {
-      const label = campaign.roas >= 5 ? "Escalar" : "Optimizar";
-      const region = regionByCampaign[campaign.id] ?? "CDMX";
-      const matchesQuery =
-        !value ||
-        `${campaign.name} ${campaign.channel} ${campaign.type} ${region} ${campaign.creativeTheme}`.toLowerCase().includes(value);
-      const matchesStatus = status === "Todos" || label === status;
-      return matchesQuery && matchesStatus;
-    });
-  }, [query, status]);
+    return [...rows]
+      .filter((row) => {
+        const matchesQuery =
+          !value ||
+          `${row.name} ${row.channel} ${row.region} ${row.type} ${row.creativeTheme}`.toLowerCase().includes(value);
+        const matchesFilter = filter === "Todas" || row.status === filter;
+        return matchesQuery && matchesFilter;
+      })
+      .sort((left, right) => Number(right[sortKey]) - Number(left[sortKey]));
+  }, [filter, query, rows, sortKey]);
 
-  const topImpact = [...dashboardData.campaigns].sort((left, right) => right.roas - left.roas).slice(0, 3);
-  const watchlist = dashboardData.campaigns.filter((campaign) => campaign.roas < 5 || campaign.cac >= 210).slice(0, 3);
+  const selected = filteredRows.find((row) => row.id === selectedId) ?? filteredRows[0] ?? rows[0];
+  const topCampaign = [...rows].sort((left, right) => right.roas - left.roas)[0];
+  const topRegion = [...rows].sort((left, right) => right.attributedRevenue - left.attributedRevenue)[0];
+  const topChannel = useMemo(() => {
+    const byChannel = rows.reduce<Record<string, { spend: number; revenue: number }>>((acc, row) => {
+      acc[row.channel] = acc[row.channel] ?? { spend: 0, revenue: 0 };
+      acc[row.channel].spend += row.spend;
+      acc[row.channel].revenue += row.attributedRevenue;
+      return acc;
+    }, {});
+
+    return Object.entries(byChannel)
+      .map(([channel, values]) => ({
+        channel: formatChannelLabel(channel),
+        spend: values.spend,
+        roas: Number((values.revenue / values.spend).toFixed(1))
+      }))
+      .sort((left, right) => right.roas - left.roas);
+  }, [rows]);
+
+  const spendByChannel = topChannel.map((item) => ({ canal: item.channel, inversion: item.spend }));
+  const roasByChannel = topChannel.map((item) => ({ canal: item.channel, roas: item.roas }));
 
   return (
     <div className="space-y-6">
       <PageHeader
         eyebrow="Marketing"
-        title="Marketing Performance Table"
-        description="Busca campanas, filtra prioridad y abre detalle comercial en un clic."
+        title="Inteligencia de marketing"
+        description="Qué campaña escalar, dónde ajustar inversión y qué retorno conviene proteger."
       />
 
-      <section className="dashboard-grid">
-        <div className="col-span-12 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-          <SearchInput value={query} onChange={setQuery} placeholder="Buscar campana, canal o region..." className="xl:max-w-[460px]" />
-          <div className="flex flex-wrap gap-2">
-            {["Todos", "Escalar", "Optimizar"].map((option) => (
-              <button
-                key={option}
-                onClick={() => setStatus(option as CampaignStatus)}
-                className={`rounded-full border px-3 py-1.5 text-xs uppercase tracking-[0.16em] transition ${
-                  status === option
-                    ? "border-accent/30 bg-accent/10 text-accent"
-                    : "border-white/10 bg-white/[0.03] text-slate-400 hover:text-white"
-                }`}
-              >
-                {option}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="col-span-12 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MiniMetric title="ROAS" value="5.1x" detail="Portafolio" />
-        <MiniMetric title="CAC" value="$190" detail="Promedio" />
-        <MiniMetric title="Highest impact" value="2" detail="Listas para escalar" />
-        <MiniMetric title="Watchlist" value="2" detail="Ajuste recomendado" />
-        </div>
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <MetricCard title="ROAS promedio" value="5.1x" detail="Portafolio actual" icon={TrendingUp} />
+        <MetricCard title="CAC promedio" value="$190" detail="Costo de adquisición" icon={Megaphone} />
+        <MetricCard
+          title="Campañas listas para escalar"
+          value={`${rows.filter((row) => row.status === "Escalar").length}`}
+          detail="Con retorno y costo saludables"
+          icon={Target}
+        />
+        <MetricCard
+          title="Campañas en watchlist"
+          value={`${rows.filter((row) => row.status === "Vigilancia").length}`}
+          detail="Con ajuste recomendado"
+          icon={TriangleAlert}
+        />
       </section>
 
-      <section className="dashboard-grid">
-        <div className="col-span-12 xl:col-span-8">
+      <section className="grid gap-4 xl:grid-cols-3">
+        <InsightCard
+          title="Canal más eficiente"
+          value={topChannel[0]?.channel ?? "Sin dato"}
+          detail={`${topChannel[0]?.roas ?? 0}x de ROAS promedio`}
+        />
+        <InsightCard title="Región con mejor conversión" value={topRegion?.region ?? "Sin dato"} detail={topRegion?.name ?? "Sin campaña líder"} />
+        <InsightCard title="Campaña con mejor retorno" value={topCampaign?.name ?? "Sin dato"} detail={`${topCampaign?.roas ?? 0}x de ROAS`} />
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
         <Card className="border-white/10 bg-white/[0.04]">
-          <CardHeader className="gap-4">
-            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-              <CardTitle>Marketing Performance Table</CardTitle>
-              <StatusChip label={`${rows.length} campanas`} />
+          <CardHeader className="gap-4 border-b border-white/10 pb-5">
+            <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+              <CardTitle>Tabla de campañas</CardTitle>
+              <div className="flex flex-wrap gap-2">
+                {["Todas", "Escalar", "Vigilancia"].map((option) => (
+                  <button
+                    key={option}
+                    onClick={() => setFilter(option as CampaignFilter)}
+                    className={`rounded-full border px-3 py-1.5 text-xs uppercase tracking-[0.16em] transition ${
+                      filter === option
+                        ? "border-accent/30 bg-accent/10 text-accent"
+                        : "border-white/10 bg-white/[0.03] text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+              <SearchInput value={query} onChange={setQuery} placeholder="Buscar campaña, canal o región..." className="xl:max-w-[440px]" />
+              <div className="flex flex-wrap gap-2">
+                {[
+                  ["roas", "Ordenar por ROAS"],
+                  ["cac", "Ordenar por CAC"],
+                  ["spend", "Ordenar por inversión"]
+                ].map(([key, label]) => (
+                  <button
+                    key={key}
+                    onClick={() => setSortKey(key as SortKey)}
+                    className={`rounded-full border px-3 py-1.5 text-xs transition ${
+                      sortKey === key
+                        ? "border-accent/30 bg-accent/10 text-accent"
+                        : "border-white/10 bg-white/[0.03] text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
           </CardHeader>
-          <CardContent className="overflow-x-auto scroll-clean">
+          <CardContent className="overflow-x-auto scroll-clean pt-6">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Campana</TableHead>
+                  <TableHead>Campaña</TableHead>
                   <TableHead>Canal</TableHead>
+                  <TableHead>Región</TableHead>
+                  <TableHead>Inversión</TableHead>
                   <TableHead>CAC</TableHead>
                   <TableHead>ROAS</TableHead>
-                  <TableHead>Region</TableHead>
                   <TableHead>Estado</TableHead>
-                  <TableHead>Insight</TableHead>
+                  <TableHead>Acción sugerida</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rows.map((campaign) => {
-                  const state = campaign.roas >= 5 ? "Escalar" : "Optimizar";
-                  return (
-                    <TableRow key={campaign.id} className="cursor-pointer" onClick={() => setSelected(campaign)}>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium text-white">{campaign.name}</p>
-                          <p className="text-xs text-slate-500">{campaign.type}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>{formatChannelLabel(campaign.channel)}</TableCell>
-                      <TableCell>{formatCompactCurrency(campaign.cac)}</TableCell>
-                      <TableCell>
-                        <div className="space-y-2">
-                          <span>{campaign.roas}x</span>
-                          <MiniBar value={campaign.roas * 18} tone={campaign.roas >= 5 ? "accent" : "amber"} />
-                        </div>
-                      </TableCell>
-                      <TableCell>{regionByCampaign[campaign.id] ?? "CDMX"}</TableCell>
-                      <TableCell>
-                        <StatusChip label={state} />
-                      </TableCell>
-                      <TableCell className="max-w-[280px] text-slate-300">{campaign.recommendation}</TableCell>
-                    </TableRow>
-                  );
-                })}
+                {filteredRows.map((row) => (
+                  <TableRow key={row.id} className="cursor-pointer" onClick={() => setSelectedId(row.id)}>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium text-white">{row.name}</p>
+                        <p className="text-xs text-slate-500">{row.type}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>{formatChannelLabel(row.channel)}</TableCell>
+                    <TableCell>{row.region}</TableCell>
+                    <TableCell>{formatCompactCurrency(row.spend)}</TableCell>
+                    <TableCell>{formatCompactCurrency(row.cac)}</TableCell>
+                    <TableCell>
+                      <div className="space-y-2">
+                        <span>{row.roas}x</span>
+                        <MiniBar value={row.roas * 18} tone={row.status === "Escalar" ? "accent" : "amber"} />
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <StatusChip label={row.status} />
+                    </TableCell>
+                    <TableCell className="max-w-[320px] text-slate-300">{row.recommendation}</TableCell>
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
           </CardContent>
         </Card>
-        </div>
 
-        <div className="col-span-12 grid gap-4 xl:col-span-4">
-          <ChartCard title="Spend by channel" description="Allocation actual.">
-            <div className="h-[250px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={spendData}>
-                  <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
-                  <XAxis dataKey="channel" stroke="#8E9AB7" tickLine={false} axisLine={false} />
-                  <YAxis stroke="#8E9AB7" tickLine={false} axisLine={false} tickFormatter={(value) => `${value / 1000000}M`} />
-                  <Tooltip
-                    contentStyle={{ background: "#09101f", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 18 }}
-                    formatter={(value) => [formatCompactCurrency(Number(value)), "Inversion"]}
-                  />
-                  <Bar dataKey="spend" fill="#5E8BFF" radius={[10, 10, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </ChartCard>
+        <div className="grid gap-4">
+          <Card className="border-white/10 bg-white/[0.04]">
+            <CardHeader>
+              <CardTitle>Inversión por canal</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[220px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={spendByChannel} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                    <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
+                    <XAxis dataKey="canal" stroke="#8E9AB7" tickLine={false} axisLine={false} />
+                    <YAxis stroke="#8E9AB7" tickLine={false} axisLine={false} tickFormatter={(value) => `${Math.round(Number(value) / 1000000)}M`} />
+                    <Tooltip
+                      contentStyle={{ background: "#09101f", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 18 }}
+                      formatter={(value) => [formatCompactCurrency(Number(value)), "Inversión"]}
+                    />
+                    <Bar dataKey="inversion" fill="#5AD7C4" radius={[10, 10, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
 
-          <ChartCard title="Creative signal" description="Interaccion y retorno.">
-            <div className="h-[250px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={contentData}>
-                  <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
-                  <XAxis dataKey="type" stroke="#8E9AB7" tickLine={false} axisLine={false} />
-                  <YAxis stroke="#8E9AB7" tickLine={false} axisLine={false} />
-                  <Tooltip contentStyle={{ background: "#09101f", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 18 }} />
-                  <Bar dataKey="engagement" fill="#5AD7C4" radius={[10, 10, 0, 0]} />
-                  <Bar dataKey="roas" fill="#F8B84E" radius={[10, 10, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </ChartCard>
-
-          <CompactList
-            title="Highest impact"
-            icon={Target}
-            tone="accent"
-            items={topImpact.map((campaign) => ({
-              id: campaign.id,
-              title: campaign.name,
-              detail: `${regionByCampaign[campaign.id] ?? "CDMX"} • ${campaign.roas}x ROAS`,
-              action: campaign.recommendation
-            }))}
-            onSelect={(id) => setSelected(dashboardData.campaigns.find((campaign) => campaign.id === id) ?? null)}
-          />
-          <CompactList
-            title="Watchlist"
-            icon={TriangleAlert}
-            tone="amber"
-            items={watchlist.map((campaign) => ({
-              id: campaign.id,
-              title: campaign.name,
-              detail: `${formatCompactCurrency(campaign.cac)} CAC • ${regionByCampaign[campaign.id] ?? "CDMX"}`,
-              action: campaign.recommendation
-            }))}
-            onSelect={(id) => setSelected(dashboardData.campaigns.find((campaign) => campaign.id === id) ?? null)}
-          />
+          <Card className="border-white/10 bg-white/[0.04]">
+            <CardHeader>
+              <CardTitle>ROAS por canal</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[220px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={roasByChannel} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                    <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
+                    <XAxis dataKey="canal" stroke="#8E9AB7" tickLine={false} axisLine={false} />
+                    <YAxis stroke="#8E9AB7" tickLine={false} axisLine={false} />
+                    <Tooltip
+                      contentStyle={{ background: "#09101f", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 18 }}
+                      formatter={(value) => [`${value}x`, "ROAS"]}
+                    />
+                    <Bar dataKey="roas" fill="#5E8BFF" radius={[10, 10, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
       <DetailPanel
         open={Boolean(selected)}
-        onClose={() => setSelected(null)}
-        title={selected?.name ?? "Campana"}
-        subtitle={selected ? `${selected.type} • ${formatChannelLabel(selected.channel)}` : ""}
+        onClose={() => setSelectedId(null)}
+        title={selected?.name ?? "Campaña"}
+        subtitle={selected ? `${selected.region} • ${formatChannelLabel(selected.channel)}` : ""}
       >
         {selected ? (
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <Metric label="ROAS" value={`${selected.roas}x`} />
-              <Metric label="CAC" value={formatCompactCurrency(selected.cac)} />
-              <Metric label="Revenue" value={formatCompactCurrency(selected.attributedRevenue)} />
-              <Metric label="Region" value={regionByCampaign[selected.id] ?? "CDMX"} />
-            </div>
             <div className="rounded-2xl border border-white/10 bg-[#09101F] p-4">
-              <p className="text-[11px] uppercase tracking-[0.16em] text-accent">Insight</p>
+              <p className="text-[11px] uppercase tracking-[0.16em] text-accent">Resumen ejecutivo</p>
               <p className="mt-2 text-sm text-slate-200">{selected.recommendation}</p>
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Metric label="Objetivo" value={selected.type} />
+              <Metric label="Región" value={selected.region} />
+              <Metric label="CAC" value={formatCompactCurrency(selected.cac)} />
+              <Metric label="ROAS" value={`${selected.roas}x`} />
+              <Metric label="Inversión" value={formatCompactCurrency(selected.spend)} />
+              <Metric label="Impacto estimado" value={selected.impact} />
+            </div>
             <div className="rounded-2xl border border-white/10 bg-[#09101F] p-4">
-              <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Creative theme</p>
-              <div className="mt-3 flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-sm text-white">{selected.creativeTheme}</p>
-                  <p className="text-xs text-slate-500">{selected.engagement}/100 engagement</p>
-                </div>
-                <StatusChip label={selected.roas >= 5 ? "Escalar" : "Optimizar"} />
-              </div>
+              <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Razón de la recomendación</p>
+              <p className="mt-2 text-sm text-slate-200">
+                {selected.creativeTheme} muestra {selected.engagement}/100 en engagement y una lectura comercial consistente con {selected.status.toLowerCase()}.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-[#09101F] p-4">
+              <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Acción sugerida</p>
+              <p className="mt-2 text-sm text-slate-200">{selected.recommendation}</p>
             </div>
           </div>
         ) : null}
@@ -246,12 +297,22 @@ export function MarketingIntelligencePage() {
   );
 }
 
-function MiniMetric({ title, value, detail }: { title: string; value: string; detail: string }) {
+function MetricCard({
+  title,
+  value,
+  detail,
+  icon: Icon
+}: {
+  title: string;
+  value: string;
+  detail: string;
+  icon: typeof Megaphone;
+}) {
   return (
     <Card className="border-white/10 bg-white/[0.04]">
-      <CardContent className="space-y-3 p-6">
+      <CardContent className="space-y-3 p-5">
         <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-slate-400">
-          <Megaphone className="h-4 w-4" />
+          <Icon className="h-4 w-4" />
           {title}
         </div>
         <p className="font-display text-3xl text-white">{value}</p>
@@ -261,42 +322,13 @@ function MiniMetric({ title, value, detail }: { title: string; value: string; de
   );
 }
 
-function CompactList({
-  title,
-  icon: Icon,
-  tone,
-  items,
-  onSelect
-}: {
-  title: string;
-  icon: LucideIcon;
-  tone: "accent" | "amber";
-  items: Array<{ id: string; title: string; detail: string; action: string }>;
-  onSelect: (id: string) => void;
-}) {
+function InsightCard({ title, value, detail }: { title: string; value: string; detail: string }) {
   return (
     <Card className="border-white/10 bg-white/[0.04]">
-      <CardHeader>
-        <div className={`inline-flex items-center gap-2 text-xs uppercase tracking-[0.22em] ${tone === "accent" ? "text-accent" : "text-amber-200"}`}>
-          <Icon className="h-4 w-4" />
-          {title}
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {items.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => onSelect(item.id)}
-            className="w-full rounded-2xl border border-white/10 bg-[#09101F] p-4 text-left transition hover:border-white/20"
-          >
-            <div className="flex items-center justify-between gap-4">
-              <p className="text-sm text-white">{item.title}</p>
-              <Radar className="h-4 w-4 text-slate-500" />
-            </div>
-            <p className="mt-2 text-xs uppercase tracking-[0.16em] text-slate-500">{item.detail}</p>
-            <p className="mt-3 text-sm text-slate-300">{item.action}</p>
-          </button>
-        ))}
+      <CardContent className="space-y-2 p-5">
+        <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">{title}</p>
+        <p className="text-xl text-white">{value}</p>
+        <p className="text-sm text-slate-400">{detail}</p>
       </CardContent>
     </Card>
   );
@@ -306,7 +338,7 @@ function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-[#09101F] p-4">
       <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">{label}</p>
-      <p className="mt-2 text-2xl text-white">{value}</p>
+      <p className="mt-2 text-lg text-white">{value}</p>
     </div>
   );
 }

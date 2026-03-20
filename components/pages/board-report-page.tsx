@@ -19,7 +19,7 @@ export function BoardReportPage() {
       <PageHeader
         eyebrow="Reporte de Consejo"
         title="Memo semanal"
-        description="Lectura ejecutiva lista para direccion, con oportunidades, riesgos y acciones sugeridas."
+        description="Lectura ejecutiva lista para dirección, con oportunidades, riesgos y acciones sugeridas."
         aside={
           <Link href="/api/report" className={buttonVariants("secondary")}>
             <span className="inline-flex items-center gap-2">
@@ -36,10 +36,10 @@ export function BoardReportPage() {
             <div className="space-y-3">
               <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-accent">
                 <FileText className="h-4 w-4" />
-                Executive Weekly Brief
+                Memo ejecutivo semanal
               </div>
               <CardTitle className="text-3xl">Resumen listo para consejo</CardTitle>
-              <p className="max-w-2xl text-sm text-slate-200">Una sola lectura para alinear expansion, margen y riesgos relevantes.</p>
+              <p className="max-w-2xl text-sm text-slate-200">Una sola lectura para alinear expansión, margen y riesgos relevantes.</p>
             </div>
             <Badge variant="accent">Corte semanal</Badge>
           </div>
@@ -70,7 +70,7 @@ export function BoardReportPage() {
           <CardContent className="space-y-3">
             {report.suggestedActions.map((action, index) => (
               <div key={action} className="rounded-2xl border border-white/10 bg-[#09101F] p-4">
-                <p className="text-xs uppercase tracking-[0.16em] text-accent">Accion {index + 1}</p>
+                <p className="text-xs uppercase tracking-[0.16em] text-accent">Acción {index + 1}</p>
                 <p className="mt-2 text-sm leading-7 text-slate-200">{action}</p>
               </div>
             ))}

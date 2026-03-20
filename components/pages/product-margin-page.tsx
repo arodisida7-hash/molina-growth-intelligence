@@ -1,145 +1,160 @@
 "use client";
 
-import { useMemo, useState, type ComponentType } from "react";
-import { ArrowDownWideNarrow, ArrowUpWideNarrow, TrendingDown, Zap } from "lucide-react";
+import { useMemo, useState } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { AlertTriangle, ArrowDownWideNarrow, Box, TrendingDown, TrendingUp } from "lucide-react";
 
 import { DetailPanel } from "@/components/common/detail-panel";
 import { MiniBar } from "@/components/common/mini-bar";
 import { PageHeader } from "@/components/common/page-header";
 import { SearchInput } from "@/components/common/search-input";
 import { StatusChip } from "@/components/common/status-chip";
-import { ChartCard } from "@/components/common/chart-card";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { dashboardData } from "@/lib/mock-data";
 import { ProductMetric } from "@/lib/types";
 import { formatChannelLabel, formatCompactCurrency, formatPercent } from "@/lib/utils";
 
+type ProductFilter = "Todos" | "Escalar" | "Subaprovechado" | "Presión";
 type SortKey = "ytdRevenue" | "grossMargin" | "growth" | "contribution";
 
 export function ProductMarginPage() {
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<ProductFilter>("Todos");
   const [sortKey, setSortKey] = useState<SortKey>("ytdRevenue");
   const [descending, setDescending] = useState(true);
-  const [query, setQuery] = useState("");
-  const [riskFilter, setRiskFilter] = useState<"Todos" | "Escalar" | "Subaprovechado" | "Presion">("Todos");
-  const [selected, setSelected] = useState<ProductMetric | null>(null);
+  const [selectedFamily, setSelectedFamily] = useState<string | null>(null);
 
-  const marginTrendData = useMemo(() => {
-    const focusProducts = dashboardData.products.slice(0, 5);
-
-    return focusProducts[0].monthlyMarginTrend.map((point, index) =>
-      focusProducts.reduce<Record<string, string | number>>(
-        (accumulator, product) => {
-          accumulator.month = point.month;
-          accumulator[product.family] = product.monthlyMarginTrend[index]?.margin ?? 0;
-          return accumulator;
-        },
-        { month: point.month }
-      )
-    );
-  }, []);
-
-  const sortedProducts = useMemo(() => {
+  const rows = useMemo(() => {
     const value = query.trim().toLowerCase();
 
     return [...dashboardData.products]
       .filter((product) => {
-        const label = product.marginPressure ? "Presion" : product.underLeveraged ? "Subaprovechado" : "Escalar";
+        const status = product.marginPressure ? "Presión" : product.underLeveraged ? "Subaprovechado" : "Escalar";
         const matchesQuery = !value || `${product.family} ${product.keyChannel}`.toLowerCase().includes(value);
-        const matchesRisk = riskFilter === "Todos" || label === riskFilter;
-        return matchesQuery && matchesRisk;
+        const matchesFilter = filter === "Todos" || status === filter;
+        return matchesQuery && matchesFilter;
       })
-      .sort((a, b) => {
-        const left = a[sortKey];
-        const right = b[sortKey];
-        return descending ? Number(right) - Number(left) : Number(left) - Number(right);
+      .sort((left, right) => {
+        const delta = Number(right[sortKey]) - Number(left[sortKey]);
+        return descending ? delta : -delta;
       });
-  }, [descending, query, riskFilter, sortKey]);
+  }, [descending, filter, query, sortKey]);
 
-  const setSort = (nextKey: SortKey) => {
-    if (sortKey === nextKey) {
-      setDescending((current) => !current);
-      return;
-    }
-    setSortKey(nextKey);
-    setDescending(true);
-  };
+  const selected = rows.find((row) => row.family === selectedFamily) ?? rows[0] ?? dashboardData.products[0];
+  const marginTrend = dashboardData.products.slice(0, 4)[0].monthlyMarginTrend.map((point, index) =>
+    dashboardData.products.slice(0, 4).reduce<Record<string, string | number>>(
+      (acc, product) => {
+        acc.mes = point.month;
+        acc[product.family] = product.monthlyMarginTrend[index]?.margin ?? 0;
+        return acc;
+      },
+      { mes: point.month }
+    )
+  );
+
+  const pressureCount = dashboardData.products.filter((product) => product.marginPressure).length;
+  const underLeveragedCount = dashboardData.products.filter((product) => product.underLeveraged).length;
 
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Products"
-        title="Product Intelligence Table"
-        description="Busca, filtra y abre detalle por producto para entender revenue, margin, growth y riesgo."
+        eyebrow="Productos"
+        title="Producto y margen"
+        description="Qué familia escalar, cuál vigilar y dónde conviene proteger margen."
       />
 
-      <section className="dashboard-grid">
-        <div className="col-span-12 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-          <SearchInput value={query} onChange={setQuery} placeholder="Buscar producto o linea..." className="xl:max-w-[460px]" />
-          <div className="flex flex-wrap gap-2">
-            {["Todos", "Escalar", "Subaprovechado", "Presion"].map((option) => (
-              <button
-                key={option}
-                onClick={() => setRiskFilter(option as "Todos" | "Escalar" | "Subaprovechado" | "Presion")}
-                className={`rounded-full border px-3 py-1.5 text-xs uppercase tracking-[0.16em] transition ${
-                  riskFilter === option
-                    ? "border-accent/30 bg-accent/10 text-accent"
-                    : "border-white/10 bg-white/[0.03] text-slate-400 hover:text-white"
-                }`}
-              >
-                {option}
-              </button>
-            ))}
-          </div>
-        </div>
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <MetricCard title="Ingresos del portafolio" value={formatCompactCurrency(dashboardData.kpis.revenueYtd)} detail="Total anualizado" icon={Box} />
+        <MetricCard title="Margen promedio" value={formatPercent(dashboardData.kpis.grossMargin)} detail="Portafolio total" icon={TrendingUp} />
+        <MetricCard title="Productos en presión" value={`${pressureCount}`} detail="Con deterioro secuencial" icon={AlertTriangle} />
+        <MetricCard title="Subaprovechados" value={`${underLeveragedCount}`} detail="Con espacio para crecer" icon={TrendingDown} />
       </section>
 
-      <section className="dashboard-grid">
-        <div className="col-span-12 xl:col-span-8">
+      <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
         <Card className="border-white/10 bg-white/[0.04]">
-          <CardHeader className="gap-4">
-            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-              <CardTitle>Product Intelligence Table</CardTitle>
-              <StatusChip label={`${sortedProducts.length} productos`} />
+          <CardHeader className="gap-4 border-b border-white/10 pb-5">
+            <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+              <CardTitle>Tabla de productos</CardTitle>
+              <div className="flex flex-wrap gap-2">
+                {["Todos", "Escalar", "Subaprovechado", "Presión"].map((option) => (
+                  <button
+                    key={option}
+                    onClick={() => setFilter(option as ProductFilter)}
+                    className={`rounded-full border px-3 py-1.5 text-xs uppercase tracking-[0.16em] transition ${
+                      filter === option
+                        ? "border-accent/30 bg-accent/10 text-accent"
+                        : "border-white/10 bg-white/[0.03] text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+              <SearchInput value={query} onChange={setQuery} placeholder="Buscar producto o canal..." className="xl:max-w-[440px]" />
+              <div className="flex flex-wrap gap-2">
+                {[
+                  ["ytdRevenue", "Ingresos"],
+                  ["grossMargin", "Margen"],
+                  ["growth", "Crecimiento"],
+                  ["contribution", "Aporte"]
+                ].map(([key, label]) => (
+                  <button
+                    key={key}
+                    onClick={() => {
+                      if (sortKey === key) {
+                        setDescending((current) => !current);
+                        return;
+                      }
+                      setSortKey(key as SortKey);
+                      setDescending(true);
+                    }}
+                    className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs transition ${
+                      sortKey === key
+                        ? "border-accent/30 bg-accent/10 text-accent"
+                        : "border-white/10 bg-white/[0.03] text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    {label}
+                    <ArrowDownWideNarrow className="h-3.5 w-3.5" />
+                  </button>
+                ))}
+              </div>
             </div>
           </CardHeader>
-          <CardContent className="overflow-x-auto scroll-clean">
+          <CardContent className="overflow-x-auto scroll-clean pt-6">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Producto</TableHead>
-                  <SortableHead label="Revenue" active={sortKey === "ytdRevenue"} onClick={() => setSort("ytdRevenue")} />
-                  <SortableHead label="Margin" active={sortKey === "grossMargin"} onClick={() => setSort("grossMargin")} />
-                  <SortableHead label="Growth" active={sortKey === "growth"} onClick={() => setSort("growth")} />
-                  <SortableHead label="Aporte" active={sortKey === "contribution"} onClick={() => setSort("contribution")} />
+                  <TableHead>Línea</TableHead>
+                  <TableHead>Ingresos</TableHead>
+                  <TableHead>Margen</TableHead>
+                  <TableHead>Crecimiento</TableHead>
                   <TableHead>Riesgo</TableHead>
-                  <TableHead>Recomendacion</TableHead>
+                  <TableHead>Recomendación</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sortedProducts.map((product) => {
-                  const label = product.marginPressure ? "Presion" : product.underLeveraged ? "Subaprovechado" : "Escalar";
+                {rows.map((product) => {
+                  const status = product.marginPressure ? "Presión" : product.underLeveraged ? "Subaprovechado" : "Escalar";
+
                   return (
-                    <TableRow key={product.family} className="cursor-pointer" onClick={() => setSelected(product)}>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium text-white">{product.family}</p>
-                          <p className="text-xs text-slate-500">{formatChannelLabel(product.keyChannel)}</p>
-                        </div>
-                      </TableCell>
+                    <TableRow key={product.family} className="cursor-pointer" onClick={() => setSelectedFamily(product.family)}>
+                      <TableCell className="font-medium text-white">{product.family}</TableCell>
+                      <TableCell>{formatChannelLabel(product.keyChannel)}</TableCell>
                       <TableCell>{formatCompactCurrency(product.ytdRevenue)}</TableCell>
                       <TableCell>
                         <div className="space-y-2">
                           <span>{formatPercent(product.grossMargin)}</span>
-                          <MiniBar value={product.grossMargin * 2.1} tone={product.marginPressure ? "rose" : "accent"} />
+                          <MiniBar value={Math.round(product.grossMargin * 2.1)} tone={status === "Presión" ? "rose" : "accent"} />
                         </div>
                       </TableCell>
                       <TableCell>{formatPercent(product.growth)}</TableCell>
-                      <TableCell>{formatPercent(product.contribution)}</TableCell>
                       <TableCell>
-                        <StatusChip label={label} />
+                        <StatusChip label={status} />
                       </TableCell>
                       <TableCell className="max-w-[320px] text-slate-300">{product.recommendedAction}</TableCell>
                     </TableRow>
@@ -149,63 +164,87 @@ export function ProductMarginPage() {
             </Table>
           </CardContent>
         </Card>
-        </div>
 
-        <div className="col-span-12 grid gap-4 xl:col-span-4">
-          <ChartCard title="Margin trend" description="Vista rapida para detectar deterioro secuencial.">
-            <div className="h-[280px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart margin={{ left: -10, right: 10 }} data={marginTrendData}>
-                  <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
-                  <XAxis dataKey="month" stroke="#8E9AB7" tickLine={false} axisLine={false} />
-                  <YAxis stroke="#8E9AB7" tickLine={false} axisLine={false} />
-                  <Tooltip contentStyle={{ background: "#09101f", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 18 }} />
-                  {dashboardData.products.slice(0, 5).map((product, index) => (
-                    <Line
-                      key={product.family}
-                      dataKey={product.family}
-                      name={product.family}
-                      type="monotone"
-                      stroke={["#5AD7C4", "#5E8BFF", "#F8B84E", "#F27EA9", "#9FE870"][index]}
-                      strokeWidth={index === 0 ? 3 : 2}
-                      dot={false}
-                    />
-                  ))}
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </ChartCard>
+        <div className="grid gap-4">
+          <Card className="border-white/10 bg-white/[0.04]">
+            <CardHeader>
+              <CardTitle>Tendencia de margen</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[220px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={marginTrend} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+                    <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
+                    <XAxis dataKey="mes" stroke="#8E9AB7" tickLine={false} axisLine={false} />
+                    <YAxis stroke="#8E9AB7" tickLine={false} axisLine={false} />
+                    <Tooltip contentStyle={{ background: "#09101f", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 18 }} />
+                    {dashboardData.products.slice(0, 4).map((product, index) => (
+                      <Line
+                        key={product.family}
+                        type="monotone"
+                        dataKey={product.family}
+                        stroke={["#5AD7C4", "#5E8BFF", "#F8B84E", "#F27EA9"][index]}
+                        strokeWidth={index === 0 ? 3 : 2}
+                        dot={false}
+                      />
+                    ))}
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
 
-          <QuickList
-            title="Highest impact"
-            icon={Zap}
-            items={dashboardData.products.filter((item) => !item.marginPressure).slice(0, 3)}
-            tone="accent"
-          />
-          <QuickList
-            title="Watchlist"
-            icon={TrendingDown}
-            items={dashboardData.products.filter((item) => item.marginPressure).slice(0, 3)}
-            tone="rose"
-          />
+          <Card className="border-white/10 bg-white/[0.04]">
+            <CardHeader>
+              <CardTitle>Prioridades de producto</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {dashboardData.products.slice(0, 3).map((product) => {
+                const status = product.marginPressure ? "Presión" : product.underLeveraged ? "Subaprovechado" : "Escalar";
+
+                return (
+                  <button
+                    key={product.family}
+                    onClick={() => setSelectedFamily(product.family)}
+                    className="w-full rounded-2xl border border-white/10 bg-[#09101F] p-4 text-left transition hover:border-white/20"
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      <p className="text-sm text-white">{product.family}</p>
+                      <StatusChip label={status} />
+                    </div>
+                    <p className="mt-2 text-xs uppercase tracking-[0.16em] text-slate-500">{formatChannelLabel(product.keyChannel)}</p>
+                    <p className="mt-3 text-sm text-slate-300">{product.recommendedAction}</p>
+                  </button>
+                );
+              })}
+            </CardContent>
+          </Card>
         </div>
       </section>
 
       <DetailPanel
         open={Boolean(selected)}
-        onClose={() => setSelected(null)}
+        onClose={() => setSelectedFamily(null)}
         title={selected?.family ?? "Producto"}
         subtitle={selected ? formatChannelLabel(selected.keyChannel) : ""}
       >
         {selected ? (
           <div className="space-y-4">
-            <Metric label="Revenue" value={formatCompactCurrency(selected.ytdRevenue)} />
-            <Metric label="Margin" value={formatPercent(selected.grossMargin)} />
-            <Metric label="Growth" value={formatPercent(selected.growth)} />
-            <Metric label="Contribution" value={formatPercent(selected.contribution)} />
+            <div className="grid grid-cols-2 gap-3">
+              <Metric label="Ingresos" value={formatCompactCurrency(selected.ytdRevenue)} />
+              <Metric label="Margen" value={formatPercent(selected.grossMargin)} />
+              <Metric label="Crecimiento" value={formatPercent(selected.growth)} />
+              <Metric label="Aporte" value={formatPercent(selected.contribution)} />
+            </div>
             <div className="rounded-2xl border border-white/10 bg-[#09101F] p-4">
-              <p className="text-[11px] uppercase tracking-[0.16em] text-accent">Recommendation</p>
-              <p className="mt-2 text-sm leading-7 text-slate-200">{selected.recommendedAction}</p>
+              <p className="text-[11px] uppercase tracking-[0.16em] text-accent">Acción sugerida</p>
+              <p className="mt-2 text-sm text-slate-200">{selected.recommendedAction}</p>
+            </div>
+            <div className="grid gap-3">
+              <SignalLine label="Demanda" value={selected.demandGrowth} />
+              <SignalLine label="Engagement de contenido" value={selected.contentEngagement} />
+              <SignalLine label="Potencial de margen" value={selected.marginPotential} />
+              <SignalLine label="Índice comercial" value={selected.salesIndex} />
             </div>
           </div>
         ) : null}
@@ -214,46 +253,26 @@ export function ProductMarginPage() {
   );
 }
 
-function SortableHead({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
-  return (
-    <TableHead>
-      <button onClick={onClick} className="inline-flex items-center gap-2 text-left text-xs uppercase tracking-[0.16em] text-slate-400">
-        {label}
-        {active ? <ArrowDownWideNarrow className="h-4 w-4" /> : <ArrowUpWideNarrow className="h-4 w-4 opacity-40" />}
-      </button>
-    </TableHead>
-  );
-}
-
-function QuickList({
+function MetricCard({
   title,
-  icon: Icon,
-  items,
-  tone
+  value,
+  detail,
+  icon: Icon
 }: {
   title: string;
-  icon: ComponentType<{ className?: string }>;
-  items: ProductMetric[];
-  tone: "accent" | "rose";
+  value: string;
+  detail: string;
+  icon: typeof Box;
 }) {
   return (
     <Card className="border-white/10 bg-white/[0.04]">
-      <CardHeader>
-        <div className={`inline-flex items-center gap-2 text-xs uppercase tracking-[0.22em] ${tone === "accent" ? "text-accent" : "text-rose-200"}`}>
+      <CardContent className="space-y-3 p-5">
+        <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-slate-400">
           <Icon className="h-4 w-4" />
           {title}
         </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {items.map((item) => (
-          <div key={item.family} className="rounded-2xl border border-white/10 bg-[#09101F] p-4">
-            <div className="flex items-center justify-between gap-4">
-              <p className="text-sm text-white">{item.family}</p>
-              <StatusChip label={item.marginPressure ? "Presion" : "Escalar"} />
-            </div>
-            <p className="mt-2 text-sm text-slate-400">{item.recommendedAction}</p>
-          </div>
-        ))}
+        <p className="font-display text-3xl text-white">{value}</p>
+        <p className="text-sm text-slate-400">{detail}</p>
       </CardContent>
     </Card>
   );
@@ -263,7 +282,19 @@ function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-[#09101F] p-4">
       <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">{label}</p>
-      <p className="mt-2 text-2xl text-white">{value}</p>
+      <p className="mt-2 text-lg text-white">{value}</p>
+    </div>
+  );
+}
+
+function SignalLine({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-[#09101F] px-4 py-4">
+      <div className="mb-2 flex items-center justify-between text-sm text-slate-300">
+        <span>{label}</span>
+        <span>{value}</span>
+      </div>
+      <MiniBar value={value} />
     </div>
   );
 }
