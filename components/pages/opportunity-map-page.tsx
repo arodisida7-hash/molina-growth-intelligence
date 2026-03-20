@@ -16,7 +16,7 @@ const regionOrder = ["Tijuana", "Monterrey", "Leon", "Guadalajara", "Queretaro",
 
 export function OpportunityMapPage() {
   const [selected, setSelected] = useState<RegionMetric | null>(null);
-  const [activationMessage, setActivationMessage] = useState("Selecciona una region para ver el detalle.");
+  const [activationMessage, setActivationMessage] = useState("Explora la shortlist y activa una plaza con mejor balance entre demanda, margen y cobertura.");
 
   const orderedRegions = useMemo(
     () => regionOrder.map((name) => dashboardData.regions.find((region) => region.region === name)!).filter(Boolean),
@@ -57,12 +57,14 @@ export function OpportunityMapPage() {
                         : "border-white/10 bg-[#09101F] hover:-translate-y-1 hover:border-white/20"
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="font-display text-2xl text-white">{region.region}</p>
-                        <p className="mt-2 text-sm leading-6 text-slate-400">{region.segment}</p>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="min-w-0 truncate font-display text-xl text-white">{region.region}</p>
+                        <div className="shrink-0 rounded-full bg-white/[0.06] px-3 py-1 text-sm font-medium text-white">
+                          {region.opportunityScore}
+                        </div>
                       </div>
-                      <div className="rounded-full bg-white/[0.06] px-3 py-1 text-sm font-medium text-white">{region.opportunityScore}</div>
+                      <p className="text-sm leading-6 text-slate-400">{region.segment}</p>
                     </div>
                     <div className="mt-5 grid grid-cols-2 gap-2">
                       <MetricChip label="DEM" value={region.demandIndex} />
@@ -83,7 +85,7 @@ export function OpportunityMapPage() {
               <Radar className="h-4 w-4" />
               Recomendacion actual
             </div>
-            <CardTitle className="text-3xl">{selected?.region ?? "Sin seleccion"}</CardTitle>
+            <CardTitle className="text-3xl">{selected?.region ?? "Shortlist regional"}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
             {selected ? (
@@ -127,8 +129,28 @@ export function OpportunityMapPage() {
                 </Button>
               </>
             ) : (
-              <div className="rounded-3xl border border-dashed border-white/10 bg-[#09101F] px-5 py-10 text-center text-sm text-slate-400">
-                Haz clic en una region para ver su contexto comercial.
+              <div className="space-y-3">
+                {topRegionsByOpportunity.slice(0, 3).map((region, index) => (
+                  <button
+                    key={region.region}
+                    onClick={() => {
+                      const target = orderedRegions.find((item) => item.region === region.region) ?? null;
+                      setSelected(target);
+                      if (target) {
+                        setActivationMessage(`Plan regional listo para ${target.region}.`);
+                      }
+                    }}
+                    className="flex w-full items-center justify-between rounded-2xl border border-white/10 bg-[#09101F] px-4 py-4 text-left transition hover:border-white/20"
+                  >
+                    <div>
+                      <p className="text-sm text-white">
+                        {index + 1}. {region.region}
+                      </p>
+                      <p className="mt-1 text-xs text-slate-400">{region.segment}</p>
+                    </div>
+                    <Badge variant="accent">{region.opportunityScore}</Badge>
+                  </button>
+                ))}
               </div>
             )}
             <div className="rounded-2xl border border-accent/20 bg-accent/10 px-4 py-3 text-sm text-slate-100">
@@ -213,8 +235,8 @@ function ScoreLine({ label, value }: { label: string; value: number }) {
 function MetricChip({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-2xl bg-white/[0.04] px-3 py-3 text-center">
-      <p className="text-[10px] uppercase tracking-[0.18em] text-slate-500">{label}</p>
-      <p className="mt-2 text-base text-white">{value}</p>
+      <p className="text-[10px] uppercase tracking-[0.14em] text-slate-500">{label}</p>
+      <p className="mt-2 text-xl text-white">{value}</p>
     </div>
   );
 }

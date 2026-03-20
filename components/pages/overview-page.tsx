@@ -1,34 +1,17 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis
-} from "recharts";
 import { ArrowRight, ArrowUpRight, BellRing, ChartColumnIncreasing, DatabaseZap, Sparkles } from "lucide-react";
 
 import { DetailPanel } from "@/components/common/detail-panel";
 import { MiniBar } from "@/components/common/mini-bar";
 import { PageHeader } from "@/components/common/page-header";
 import { SearchInput } from "@/components/common/search-input";
-import { SourceChip } from "@/components/common/source-chip";
 import { StatusChip } from "@/components/common/status-chip";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { dashboardData } from "@/lib/mock-data";
 import { formatChannelLabel, formatCompactCurrency, formatPercent } from "@/lib/utils";
-
-const channelColors = ["#5AD7C4", "#5E8BFF", "#F8B84E", "#F27EA9", "#93A6FF"];
 
 type OpportunityRow = {
   id: string;
@@ -289,9 +272,9 @@ export function OverviewPage() {
               Connected enterprise data sources
             </div>
           </CardHeader>
-          <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <CardContent className="grid gap-3 md:grid-cols-2">
             {dashboardData.connectedSources.map((source) => (
-              <SourceChip key={source.name} name={source.name} category={source.category} />
+              <CompactSourceRow key={source.name} name={source.name} category={source.category} />
             ))}
           </CardContent>
         </Card>
@@ -300,35 +283,23 @@ export function OverviewPage() {
           <CardHeader>
             <CardTitle>Commercial Context</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
-            <div className="h-[250px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={dashboardData.channelMix} innerRadius={54} outerRadius={78} paddingAngle={4} dataKey="value">
-                    {dashboardData.channelMix.map((item, index) => (
-                      <Cell key={item.channel} fill={channelColors[index % channelColors.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{ background: "#09101f", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 18 }}
-                    formatter={(value) => [`${value}%`, "Mix"]}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+          <CardContent className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-3">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Channel mix</p>
+              {dashboardData.channelMix.map((item) => (
+                <MetricListRow key={item.channel} label={formatChannelLabel(item.channel)} value={`${item.value}%`} barValue={item.value} />
+              ))}
             </div>
-            <div className="h-[250px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={dashboardData.products.slice(0, 5)}>
-                  <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
-                  <XAxis dataKey="family" stroke="#8E9AB7" tickLine={false} axisLine={false} angle={-18} height={64} textAnchor="end" />
-                  <YAxis stroke="#8E9AB7" tickLine={false} axisLine={false} />
-                  <Tooltip
-                    contentStyle={{ background: "#09101f", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 18 }}
-                    formatter={(value) => [formatPercent(Number(value)), "Margen"]}
-                  />
-                  <Bar dataKey="grossMargin" radius={[10, 10, 0, 0]} fill="#5AD7C4" />
-                </BarChart>
-              </ResponsiveContainer>
+            <div className="space-y-3">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Margin by family</p>
+              {dashboardData.products.slice(0, 5).map((item) => (
+                <MetricListRow
+                  key={item.family}
+                  label={item.family}
+                  value={formatPercent(item.grossMargin)}
+                  barValue={Math.round(item.grossMargin)}
+                />
+              ))}
             </div>
           </CardContent>
         </Card>
@@ -364,6 +335,27 @@ export function OverviewPage() {
           </div>
         </div>
       </DetailPanel>
+    </div>
+  );
+}
+
+function CompactSourceRow({ name, category }: { name: string; category?: string }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-[#09101F] px-4 py-3">
+      <p className="text-xs uppercase tracking-[0.18em] text-white">{name}</p>
+      {category ? <p className="mt-2 text-sm text-slate-400">{category}</p> : null}
+    </div>
+  );
+}
+
+function MetricListRow({ label, value, barValue }: { label: string; value: string; barValue: number }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-[#09101F] px-4 py-3">
+      <div className="flex items-center justify-between gap-4 text-sm">
+        <span className="text-slate-300">{label}</span>
+        <span className="text-white">{value}</span>
+      </div>
+      <MiniBar value={barValue} className="mt-3" />
     </div>
   );
 }
