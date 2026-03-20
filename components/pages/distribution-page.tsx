@@ -86,21 +86,24 @@ export function DistributionIntelligencePage() {
   const watchlist = rows.filter((row) => row.priority === "Riesgo" || row.stockRisk >= 28).slice(0, 3);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <PageHeader
         eyebrow="Distribution"
         title="Distribution Coverage Table"
         description="Localiza cobertura, demanda y riesgo por region con detalle bajo demanda."
       />
 
-      <section className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
+      <section className="dashboard-grid">
+        <div className="col-span-12 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MiniMetric title="Expandir" value="4" detail="Plazas con oportunidad" />
         <MiniMetric title="Defender" value="2" detail="Cobertura fuerte" />
         <MiniMetric title="Riesgo stock" value="3" detail="Seguimiento semanal" />
         <MiniMetric title="Service level" value="85" detail="Promedio operativo" />
+        </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+      <section className="dashboard-grid">
+        <div className="col-span-12 xl:col-span-8">
         <Card className="border-white/10 bg-white/[0.04]">
           <CardHeader className="gap-4">
             <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
@@ -167,8 +170,9 @@ export function DistributionIntelligencePage() {
             </Table>
           </CardContent>
         </Card>
+        </div>
 
-        <div className="grid gap-4">
+        <div className="col-span-12 grid gap-4 xl:col-span-4">
           <Card className="border-white/10 bg-white/[0.04]">
             <CardHeader>
               <CardTitle>Penetracion vs demanda</CardTitle>

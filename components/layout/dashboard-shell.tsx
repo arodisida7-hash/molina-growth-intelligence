@@ -59,78 +59,81 @@ export function DashboardShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <div className="mx-auto flex min-h-screen max-w-[1720px]">
+      <div className="mx-auto flex min-h-screen max-w-[1600px]">
         <AppSidebar />
         <div className="flex min-h-screen flex-1 flex-col">
           <header className="sticky top-0 z-20 border-b border-white/10 bg-[#060816]/80 px-5 py-4 backdrop-blur-xl md:px-8 xl:px-10">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 text-xs uppercase tracking-[0.24em] text-slate-400">
-                  <CalendarDays className="h-4 w-4" />
-                  Corte al 11 de marzo de 2026
+            <div className="dashboard-container">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-xs uppercase tracking-[0.24em] text-slate-400">
+                    <CalendarDays className="h-4 w-4" />
+                    Corte al 11 de marzo de 2026
+                  </div>
+                  <p className="text-sm text-slate-300">
+                    Capa de inteligencia comercial para potenciar CRM, SAP y BI con decisiones de expansion, margen y cobertura.
+                  </p>
                 </div>
-                <p className="text-sm text-slate-300">
-                  Capa de inteligencia comercial para potenciar CRM, SAP y BI con decisiones de expansion, margen y cobertura.
-                </p>
-                <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
-                  Designed for enterprise commercial decision-making
-                </p>
+                <div className="flex flex-col gap-3 lg:min-w-[420px]">
+                  <div className="relative">
+                    <SearchInput
+                      value={query}
+                      onChange={setQuery}
+                      placeholder="Buscar producto, region, campana u oportunidad..."
+                    />
+                    {results.length > 0 ? (
+                      <div className="absolute top-[calc(100%+0.5rem)] z-30 w-full rounded-3xl border border-white/10 bg-[#08101F]/95 p-2 shadow-panel backdrop-blur-xl">
+                        {results.map((item) => (
+                          <button
+                            key={item.id}
+                            onClick={() => {
+                              setQuery("");
+                              router.push(item.href);
+                            }}
+                            className="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left transition hover:bg-white/[0.06]"
+                          >
+                            <div>
+                              <p className="text-sm text-white">{item.label}</p>
+                              <p className="text-xs uppercase tracking-[0.16em] text-slate-500">{item.meta}</p>
+                            </div>
+                            <ChevronRight className="h-4 w-4 text-slate-500" />
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Link href="/api/report" className={buttonVariants("secondary")}>
+                      <span className="inline-flex items-center gap-2">
+                        <Download className="h-4 w-4" />
+                        JSON del reporte
+                      </span>
+                    </Link>
+                    <Link href="/" className={buttonVariants("ghost")}>
+                      <span className="inline-flex items-center gap-2">
+                        Volver a la portada
+                        <ChevronRight className="h-4 w-4" />
+                      </span>
+                    </Link>
+                  </div>
+                </div>
               </div>
-              <div className="flex flex-col gap-3 lg:min-w-[430px]">
-                <div className="relative">
-                  <SearchInput
-                    value={query}
-                    onChange={setQuery}
-                    placeholder="Buscar producto, region, campana u oportunidad..."
-                  />
-                  {results.length > 0 ? (
-                    <div className="absolute top-[calc(100%+0.5rem)] z-30 w-full rounded-3xl border border-white/10 bg-[#08101F]/95 p-2 shadow-panel backdrop-blur-xl">
-                      {results.map((item) => (
-                        <button
-                          key={item.id}
-                          onClick={() => {
-                            setQuery("");
-                            router.push(item.href);
-                          }}
-                          className="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left transition hover:bg-white/[0.06]"
-                        >
-                          <div>
-                            <p className="text-sm text-white">{item.label}</p>
-                            <p className="text-xs uppercase tracking-[0.16em] text-slate-500">{item.meta}</p>
-                          </div>
-                          <ChevronRight className="h-4 w-4 text-slate-500" />
-                        </button>
-                      ))}
-                    </div>
-                  ) : null}
-                </div>
-                <div className="flex flex-wrap items-center gap-3">
-                <Link href="/api/report" className={buttonVariants("secondary")}>
-                  <span className="inline-flex items-center gap-2">
-                    <Download className="h-4 w-4" />
-                    JSON del reporte
-                  </span>
-                </Link>
-                <Link href="/" className={buttonVariants("ghost")}>
-                  <span className="inline-flex items-center gap-2">
-                    Volver a la portada
-                    <ChevronRight className="h-4 w-4" />
-                  </span>
-                </Link>
-                </div>
+              <div className="mt-4">
+                <MobileNav />
               </div>
-            </div>
-            <div className="mt-4">
-              <MobileNav />
             </div>
           </header>
-          <main className="flex-1 px-5 py-8 md:px-8 xl:px-10">{children}</main>
+          <main className="flex-1 px-5 py-8 md:px-8 xl:px-10">
+            <div className="dashboard-container">{children}</div>
+          </main>
           <footer className="border-t border-white/10 px-5 py-4 md:px-8 xl:px-10">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <p className="text-sm text-slate-500">
-                Designed to work with CRM, SAP and BI systems.
-              </p>
-              <PrototypeNote compact />
+            <div className="dashboard-container">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <p className="text-sm text-slate-500">
+                  Designed to work with CRM, SAP and BI systems.
+                </p>
+                <PrototypeNote compact />
+              </div>
             </div>
           </footer>
         </div>

@@ -42,7 +42,7 @@ type CampaignStatus = "Todos" | "Escalar" | "Optimizar";
 export function MarketingIntelligencePage() {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<CampaignStatus>("Todos");
-  const [selected, setSelected] = useState<CampaignMetric | null>(dashboardData.campaigns[0] ?? null);
+  const [selected, setSelected] = useState<CampaignMetric | null>(null);
 
   const rows = useMemo(() => {
     const value = query.trim().toLowerCase();
@@ -62,21 +62,24 @@ export function MarketingIntelligencePage() {
   const watchlist = dashboardData.campaigns.filter((campaign) => campaign.roas < 5 || campaign.cac >= 210).slice(0, 3);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <PageHeader
         eyebrow="Marketing"
         title="Marketing Performance Table"
         description="Busca campanas, filtra prioridad y abre detalle comercial en un clic."
       />
 
-      <section className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
+      <section className="dashboard-grid">
+        <div className="col-span-12 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MiniMetric title="ROAS" value="5.1x" detail="Portafolio" />
         <MiniMetric title="CAC" value="$190" detail="Promedio" />
         <MiniMetric title="Highest impact" value="2" detail="Listas para escalar" />
         <MiniMetric title="Watchlist" value="2" detail="Ajuste recomendado" />
+        </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+      <section className="dashboard-grid">
+        <div className="col-span-12 xl:col-span-8">
         <Card className="border-white/10 bg-white/[0.04]">
           <CardHeader className="gap-4">
             <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
@@ -143,8 +146,9 @@ export function MarketingIntelligencePage() {
             </Table>
           </CardContent>
         </Card>
+        </div>
 
-        <div className="grid gap-4">
+        <div className="col-span-12 grid gap-4 xl:col-span-4">
           <ChartCard title="Spend by channel" description="Allocation actual.">
             <div className="h-[250px]">
               <ResponsiveContainer width="100%" height="100%">

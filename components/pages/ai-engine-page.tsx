@@ -46,14 +46,17 @@ export function AiOpportunityEnginePage() {
         description="Cada señal se convierte en una lectura de negocio, una acción y un rango de impacto."
       />
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="dashboard-grid">
+        <div className="col-span-12 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <CompactStat title="Open signals" value="6" detail="Lectura activa" />
         <CompactStat title="High confidence" value="3" detail="Listas para actuar" />
         <CompactStat title="Watchlist" value="2" detail="Riesgos relevantes" />
         <CompactStat title="Impact range" value="+9%" detail="Escenario superior" />
+        </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[1.02fr_0.98fr]">
+      <section className="dashboard-grid">
+        <div className="col-span-12 xl:col-span-7">
         <Card className="border-white/10 bg-white/[0.04]">
           <CardHeader className="gap-4 border-b border-white/10 pb-5">
             <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
@@ -132,8 +135,9 @@ export function AiOpportunityEnginePage() {
             })}
           </CardContent>
         </Card>
+        </div>
 
-        <div className="grid gap-4">
+        <div className="col-span-12 grid gap-4 xl:col-span-5">
           <PlaybookPanel selected={selected} plan={plan} onGeneratePlan={() => setPlan(generateActionPlan(dashboardData.opportunities))} />
 
           <CompactList title="Highest impact opportunities" items={highestImpact} onSelect={(item) => setSelectedId(item.id)} />

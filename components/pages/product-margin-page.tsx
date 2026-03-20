@@ -24,7 +24,7 @@ export function ProductMarginPage() {
   const [descending, setDescending] = useState(true);
   const [query, setQuery] = useState("");
   const [riskFilter, setRiskFilter] = useState<"Todos" | "Escalar" | "Subaprovechado" | "Presion">("Todos");
-  const [selected, setSelected] = useState<ProductMetric | null>(dashboardData.products[0] ?? null);
+  const [selected, setSelected] = useState<ProductMetric | null>(null);
 
   const marginTrendData = useMemo(() => {
     const focusProducts = dashboardData.products.slice(0, 5);
@@ -68,14 +68,15 @@ export function ProductMarginPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <PageHeader
         eyebrow="Products"
         title="Product Intelligence Table"
         description="Busca, filtra y abre detalle por producto para entender revenue, margin, growth y riesgo."
       />
 
-      <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+      <section className="dashboard-grid">
+        <div className="col-span-12 xl:col-span-8">
         <Card className="border-white/10 bg-white/[0.04]">
           <CardHeader className="gap-4">
             <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
@@ -142,8 +143,9 @@ export function ProductMarginPage() {
             </Table>
           </CardContent>
         </Card>
+        </div>
 
-        <div className="grid gap-4">
+        <div className="col-span-12 grid gap-4 xl:col-span-4">
           <ChartCard title="Margin trend" description="Vista rapida para detectar deterioro secuencial.">
             <div className="h-[280px]">
               <ResponsiveContainer width="100%" height="100%">

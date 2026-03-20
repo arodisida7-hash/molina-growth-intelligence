@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Activity,
   AreaChart,
@@ -65,6 +65,7 @@ export const navItems = navSections.flatMap((section) => section.items);
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
 
   return (
     <aside className="sticky top-0 hidden h-screen w-[310px] shrink-0 border-r border-white/10 bg-[#070b18]/90 px-6 py-8 backdrop-blur-xl xl:block">
@@ -76,9 +77,7 @@ export function AppSidebar() {
           <div className="space-y-2">
             <p className="text-xs font-medium uppercase tracking-[0.3em] text-accent">Molina Intelligence</p>
             <h2 className="font-display text-2xl font-semibold text-white">Growth Intelligence</h2>
-            <p className="text-sm leading-6 text-slate-400">
-              Capa de inteligencia comercial para expansion, margen y decisiones ejecutivas.
-            </p>
+            <p className="text-sm text-slate-400">Expansion, margen y decisiones.</p>
           </div>
         </div>
 
@@ -91,11 +90,11 @@ export function AppSidebar() {
                 const active = pathname === item.href;
 
                 return (
-                  <a
+                  <button
                     key={item.href}
-                    href={item.href}
+                    onClick={() => router.push(item.href)}
                     className={cn(
-                      "group flex items-center gap-3 rounded-2xl border px-4 py-3 transition duration-300",
+                      "group flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left transition duration-300",
                       active
                         ? "border-accent/30 bg-accent/10 text-white shadow-[0_0_0_1px_rgba(90,215,196,0.1)]"
                         : "border-transparent bg-transparent text-slate-400 hover:border-white/10 hover:bg-white/[0.04] hover:text-white"
@@ -103,7 +102,7 @@ export function AppSidebar() {
                   >
                     <Icon className={cn("h-4 w-4", active ? "text-accent" : "text-slate-500 group-hover:text-slate-200")} />
                     <span className="text-sm leading-5">{item.label}</span>
-                  </a>
+                  </button>
                 );
               })}
             </div>
@@ -123,6 +122,7 @@ export function AppSidebar() {
 
 export function MobileNav() {
   const pathname = usePathname();
+  const router = useRouter();
 
   return (
     <div className="scroll-clean flex gap-2 overflow-x-auto xl:hidden">
@@ -131,9 +131,9 @@ export function MobileNav() {
         const active = pathname === item.href;
 
         return (
-          <a
+          <button
             key={item.href}
-            href={item.href}
+            onClick={() => router.push(item.href)}
             className={cn(
               "inline-flex shrink-0 items-center gap-2 rounded-2xl border px-4 py-3 text-sm transition duration-300",
               active
@@ -143,7 +143,7 @@ export function MobileNav() {
           >
             <Icon className="h-4 w-4" />
             {item.label}
-          </a>
+          </button>
         );
       })}
     </div>
