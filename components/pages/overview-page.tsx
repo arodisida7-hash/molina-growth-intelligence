@@ -48,7 +48,7 @@ export function OverviewPage() {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"Todos" | "Alta prioridad" | "Watchlist">("Todos");
   const [selectedKpi, setSelectedKpi] = useState<null | "revenue" | "margin" | "marketing" | "growth">(null);
-  const [selectedOpportunityId, setSelectedOpportunityId] = useState<string | null>(dashboardData.opportunities[0]?.id ?? null);
+  const [selectedOpportunityId, setSelectedOpportunityId] = useState<string | null>(null);
 
   const opportunityRows = useMemo<OpportunityRow[]>(() => {
     return dashboardData.opportunities.map((item) => {
@@ -82,7 +82,7 @@ export function OverviewPage() {
     });
   }, [opportunityRows, query, statusFilter]);
 
-  const selectedOpportunity = opportunityRows.find((row) => row.id === selectedOpportunityId) ?? filteredRows[0] ?? opportunityRows[0];
+  const selectedOpportunity = opportunityRows.find((row) => row.id === selectedOpportunityId) ?? null;
   const topPriorities = filteredRows.filter((row) => row.status === "Alta prioridad").slice(0, 3);
   const watchlist = dashboardData.alerts.slice(0, 3);
 

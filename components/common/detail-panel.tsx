@@ -35,13 +35,13 @@ export function DetailPanel({
         aria-label="Cerrar detalle"
         onClick={onClose}
         className={cn(
-          "absolute inset-0 bg-[#02040C]/62 transition xl:hidden",
+          "absolute inset-0 bg-[#02040C]/62 transition lg:hidden",
           open ? "pointer-events-auto opacity-100" : "opacity-0"
         )}
       />
       <aside
         className={cn(
-          "absolute right-0 top-0 h-full w-full max-w-[540px] border-l border-white/10 bg-[#08101F] shadow-[0_30px_90px_rgba(0,0,0,0.45)] transition duration-300 will-change-transform xl:top-6 xl:right-6 xl:h-[calc(100vh-3rem)] xl:rounded-[28px] xl:border xl:border-white/10",
+          "absolute right-0 top-0 h-full w-full max-w-[540px] border-l border-white/10 bg-[#08101F] shadow-[0_30px_90px_rgba(0,0,0,0.45)] transition duration-300 will-change-transform lg:top-6 lg:right-6 lg:h-[calc(100vh-3rem)] lg:rounded-[28px] lg:border lg:border-white/10",
           open ? "translate-x-0 pointer-events-auto" : "translate-x-full"
         )}
       >
