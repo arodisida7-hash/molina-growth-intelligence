@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -18,19 +18,30 @@ export function DetailPanel({
   children: ReactNode;
   onClose: () => void;
 }) {
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeydown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+
+    window.addEventListener("keydown", handleKeydown);
+    return () => window.removeEventListener("keydown", handleKeydown);
+  }, [onClose, open]);
+
   return (
     <div className={cn("pointer-events-none fixed inset-0 z-40 transition", open ? "opacity-100" : "opacity-0")}>
       <button
         aria-label="Cerrar detalle"
         onClick={onClose}
         className={cn(
-          "absolute inset-0 bg-[#02040C]/62 transition",
+          "absolute inset-0 bg-[#02040C]/62 transition xl:hidden",
           open ? "pointer-events-auto opacity-100" : "opacity-0"
         )}
       />
       <aside
         className={cn(
-          "absolute right-0 top-0 h-full w-full max-w-[540px] border-l border-white/10 bg-[#08101F] shadow-[0_30px_90px_rgba(0,0,0,0.45)] transition duration-300 will-change-transform",
+          "absolute right-0 top-0 h-full w-full max-w-[540px] border-l border-white/10 bg-[#08101F] shadow-[0_30px_90px_rgba(0,0,0,0.45)] transition duration-300 will-change-transform xl:top-6 xl:right-6 xl:h-[calc(100vh-3rem)] xl:rounded-[28px] xl:border xl:border-white/10",
           open ? "translate-x-0 pointer-events-auto" : "translate-x-full"
         )}
       >
