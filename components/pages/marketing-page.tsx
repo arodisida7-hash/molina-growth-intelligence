@@ -68,10 +68,11 @@ export function MarketingIntelligencePage() {
   }, [filter, query, rows, sortKey]);
 
   const selected = selectedId ? rows.find((row) => row.id === selectedId) ?? null : null;
-  const topCampaign = [...rows].sort((left, right) => right.roas - left.roas)[0];
-  const topRegion = [...rows].sort((left, right) => right.attributedRevenue - left.attributedRevenue)[0];
-  const topChannel = useMemo(() => {
-    const byChannel = rows.reduce<Record<string, { spend: number; revenue: number }>>((acc, row) => {
+  const topCampaign = [...filteredRows].sort((left, right) => right.roas - left.roas)[0];
+  const topRegion = [...filteredRows].sort((left, right) => right.attributedRevenue - left.attributedRevenue)[0];
+  const channelSummary = useMemo(() => {
+    const sourceRows = filteredRows.length > 0 ? filteredRows : rows;
+    const byChannel = sourceRows.reduce<Record<string, { spend: number; revenue: number }>>((acc, row) => {
       acc[row.channel] = acc[row.channel] ?? { spend: 0, revenue: 0 };
       acc[row.channel].spend += row.spend;
       acc[row.channel].revenue += row.attributedRevenue;
@@ -85,10 +86,10 @@ export function MarketingIntelligencePage() {
         roas: Number((values.revenue / values.spend).toFixed(1))
       }))
       .sort((left, right) => right.roas - left.roas);
-  }, [rows]);
+  }, [filteredRows, rows]);
 
-  const spendByChannel = topChannel.map((item) => ({ canal: item.channel, inversion: item.spend }));
-  const roasByChannel = topChannel.map((item) => ({ canal: item.channel, roas: item.roas }));
+  const spendByChannel = channelSummary.map((item) => ({ canal: item.channel, inversion: item.spend }));
+  const roasByChannel = channelSummary.map((item) => ({ canal: item.channel, roas: item.roas }));
 
   return (
     <div className="space-y-6">
@@ -118,14 +119,60 @@ export function MarketingIntelligencePage() {
       <section className="grid gap-4 xl:grid-cols-3">
         <InsightCard
           title="Canal más eficiente"
-          value={topChannel[0]?.channel ?? "Sin dato"}
-          detail={`${topChannel[0]?.roas ?? 0}x de ROAS promedio`}
+          value={channelSummary[0]?.channel ?? "Sin dato"}
+          detail={`${channelSummary[0]?.roas ?? 0}x de ROAS promedio`}
         />
         <InsightCard title="Región con mejor conversión" value={topRegion?.region ?? "Sin dato"} detail={topRegion?.name ?? "Sin campaña líder"} />
         <InsightCard title="Campaña con mejor retorno" value={topCampaign?.name ?? "Sin dato"} detail={`${topCampaign?.roas ?? 0}x de ROAS`} />
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+      <section className="grid gap-4 xl:grid-cols-2">
+        <Card className="border-white/10 bg-white/[0.04]">
+          <CardHeader>
+            <CardTitle>Inversión por canal</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[260px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={spendByChannel} layout="vertical" margin={{ top: 8, right: 12, left: 16, bottom: 0 }}>
+                  <CartesianGrid stroke="rgba(255,255,255,0.08)" horizontal={false} />
+                  <XAxis type="number" stroke="#8E9AB7" tickLine={false} axisLine={false} tickFormatter={(value) => `${Math.round(Number(value) / 1000000)}M`} />
+                  <YAxis type="category" dataKey="canal" width={120} stroke="#8E9AB7" tickLine={false} axisLine={false} />
+                  <Tooltip
+                    contentStyle={{ background: "#09101f", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 18 }}
+                    formatter={(value) => [formatCompactCurrency(Number(value)), "Inversión"]}
+                  />
+                  <Bar dataKey="inversion" fill="#5AD7C4" radius={[0, 10, 10, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-white/10 bg-white/[0.04]">
+          <CardHeader>
+            <CardTitle>ROAS por canal</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[260px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={roasByChannel} layout="vertical" margin={{ top: 8, right: 12, left: 16, bottom: 0 }}>
+                  <CartesianGrid stroke="rgba(255,255,255,0.08)" horizontal={false} />
+                  <XAxis type="number" stroke="#8E9AB7" tickLine={false} axisLine={false} />
+                  <YAxis type="category" dataKey="canal" width={120} stroke="#8E9AB7" tickLine={false} axisLine={false} />
+                  <Tooltip
+                    contentStyle={{ background: "#09101f", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 18 }}
+                    formatter={(value) => [`${value}x`, "ROAS"]}
+                  />
+                  <Bar dataKey="roas" fill="#5E8BFF" radius={[0, 10, 10, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+
+      <section>
         <Card className="border-white/10 bg-white/[0.04]">
           <CardHeader className="gap-4 border-b border-white/10 pb-5">
             <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
@@ -170,94 +217,54 @@ export function MarketingIntelligencePage() {
             </div>
           </CardHeader>
           <CardContent className="overflow-x-auto scroll-clean pt-6">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Campaña</TableHead>
-                  <TableHead>Canal</TableHead>
-                  <TableHead>Región</TableHead>
-                  <TableHead>Inversión</TableHead>
-                  <TableHead>CAC</TableHead>
-                  <TableHead>ROAS</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Acción sugerida</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredRows.map((row) => (
-                  <TableRow key={row.id} className="cursor-pointer" onClick={() => setSelectedId(row.id)}>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium text-white">{row.name}</p>
-                        <p className="text-xs text-slate-500">{row.type}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>{formatChannelLabel(row.channel)}</TableCell>
-                    <TableCell>{row.region}</TableCell>
-                    <TableCell>{formatCompactCurrency(row.spend)}</TableCell>
-                    <TableCell>{formatCompactCurrency(row.cac)}</TableCell>
-                    <TableCell>
-                      <div className="space-y-2">
-                        <span>{row.roas}x</span>
-                        <MiniBar value={row.roas * 18} tone={row.status === "Escalar" ? "accent" : "amber"} />
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <StatusChip label={row.status} />
-                    </TableCell>
-                    <TableCell className="max-w-[320px] text-slate-300">{row.recommendation}</TableCell>
+            {filteredRows.length === 0 ? (
+              <div className="rounded-3xl border border-dashed border-white/10 bg-[#09101F] px-5 py-10 text-center text-sm text-slate-400">
+                No hay campañas para el criterio buscado.
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Campaña</TableHead>
+                    <TableHead>Canal</TableHead>
+                    <TableHead>Región</TableHead>
+                    <TableHead>Inversión</TableHead>
+                    <TableHead>CAC</TableHead>
+                    <TableHead>ROAS</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead>Acción sugerida</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredRows.map((row) => (
+                    <TableRow key={row.id} className="cursor-pointer" onClick={() => setSelectedId(row.id)}>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium text-white">{row.name}</p>
+                          <p className="text-xs text-slate-500">{row.type}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell>{formatChannelLabel(row.channel)}</TableCell>
+                      <TableCell>{row.region}</TableCell>
+                      <TableCell>{formatCompactCurrency(row.spend)}</TableCell>
+                      <TableCell>{formatCompactCurrency(row.cac)}</TableCell>
+                      <TableCell>
+                        <div className="space-y-2">
+                          <span>{row.roas}x</span>
+                          <MiniBar value={row.roas * 18} tone={row.status === "Escalar" ? "accent" : "amber"} />
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <StatusChip label={row.status} />
+                      </TableCell>
+                      <TableCell className="max-w-[320px] text-slate-300">{row.recommendation}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
-
-        <div className="grid gap-4">
-          <Card className="border-white/10 bg-white/[0.04]">
-            <CardHeader>
-              <CardTitle>Inversión por canal</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[220px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={spendByChannel} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                    <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
-                    <XAxis dataKey="canal" stroke="#8E9AB7" tickLine={false} axisLine={false} />
-                    <YAxis stroke="#8E9AB7" tickLine={false} axisLine={false} tickFormatter={(value) => `${Math.round(Number(value) / 1000000)}M`} />
-                    <Tooltip
-                      contentStyle={{ background: "#09101f", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 18 }}
-                      formatter={(value) => [formatCompactCurrency(Number(value)), "Inversión"]}
-                    />
-                    <Bar dataKey="inversion" fill="#5AD7C4" radius={[10, 10, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-white/10 bg-white/[0.04]">
-            <CardHeader>
-              <CardTitle>ROAS por canal</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[220px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={roasByChannel} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                    <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
-                    <XAxis dataKey="canal" stroke="#8E9AB7" tickLine={false} axisLine={false} />
-                    <YAxis stroke="#8E9AB7" tickLine={false} axisLine={false} />
-                    <Tooltip
-                      contentStyle={{ background: "#09101f", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 18 }}
-                      formatter={(value) => [`${value}x`, "ROAS"]}
-                    />
-                    <Bar dataKey="roas" fill="#5E8BFF" radius={[10, 10, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
       </section>
 
       <DetailPanel
