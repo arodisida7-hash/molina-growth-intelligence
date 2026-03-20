@@ -71,7 +71,7 @@ export function DistributionIntelligencePage() {
     });
   }, [filter, query, rows]);
 
-  const selected = filteredRows.find((row) => row.region === selectedRegion) ?? filteredRows[0] ?? rows[0];
+  const selected = selectedRegion ? rows.find((row) => row.region === selectedRegion) ?? null : null;
   const avgCoverage = Math.round(rows.reduce((sum, row) => sum + row.coverage, 0) / rows.length);
   const avgService = Math.round(rows.reduce((sum, row) => sum + row.serviceLevel, 0) / rows.length);
   const topPriorities = rows.filter((row) => row.priority === "Expandir" || row.priority === "Defender").slice(0, 4);
@@ -223,7 +223,7 @@ export function DistributionIntelligencePage() {
       </section>
 
       <DetailPanel
-        open={Boolean(selected)}
+        open={selected !== null}
         onClose={() => setSelectedRegion(null)}
         title={selected?.region ?? "Región"}
         subtitle={selected ? `${selected.channel} • ${selected.distributor}` : ""}

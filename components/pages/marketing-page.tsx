@@ -67,7 +67,7 @@ export function MarketingIntelligencePage() {
       .sort((left, right) => Number(right[sortKey]) - Number(left[sortKey]));
   }, [filter, query, rows, sortKey]);
 
-  const selected = filteredRows.find((row) => row.id === selectedId) ?? filteredRows[0] ?? rows[0];
+  const selected = selectedId ? rows.find((row) => row.id === selectedId) ?? null : null;
   const topCampaign = [...rows].sort((left, right) => right.roas - left.roas)[0];
   const topRegion = [...rows].sort((left, right) => right.attributedRevenue - left.attributedRevenue)[0];
   const topChannel = useMemo(() => {
@@ -261,7 +261,7 @@ export function MarketingIntelligencePage() {
       </section>
 
       <DetailPanel
-        open={Boolean(selected)}
+        open={selected !== null}
         onClose={() => setSelectedId(null)}
         title={selected?.name ?? "Campaña"}
         subtitle={selected ? `${selected.region} • ${formatChannelLabel(selected.channel)}` : ""}

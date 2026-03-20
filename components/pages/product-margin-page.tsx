@@ -41,7 +41,7 @@ export function ProductMarginPage() {
       });
   }, [descending, filter, query, sortKey]);
 
-  const selected = rows.find((row) => row.family === selectedFamily) ?? rows[0] ?? dashboardData.products[0];
+  const selected = selectedFamily ? dashboardData.products.find((row) => row.family === selectedFamily) ?? null : null;
   const marginTrend = dashboardData.products.slice(0, 4)[0].monthlyMarginTrend.map((point, index) =>
     dashboardData.products.slice(0, 4).reduce<Record<string, string | number>>(
       (acc, product) => {
@@ -223,7 +223,7 @@ export function ProductMarginPage() {
       </section>
 
       <DetailPanel
-        open={Boolean(selected)}
+        open={selected !== null}
         onClose={() => setSelectedFamily(null)}
         title={selected?.family ?? "Producto"}
         subtitle={selected ? formatChannelLabel(selected.keyChannel) : ""}

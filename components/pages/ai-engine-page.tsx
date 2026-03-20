@@ -62,7 +62,7 @@ export function AiOpportunityEnginePage() {
     });
   }, [filter, query, rows]);
 
-  const selected = filteredRows.find((row) => row.id === selectedId) ?? filteredRows[0] ?? rows[0];
+  const selected = selectedId ? rows.find((row) => row.id === selectedId) ?? null : null;
   const topPriorities = rows.filter((row) => row.status === "Prioridad alta").slice(0, 3);
   const watchlist = rows.filter((row) => row.status === "Riesgo").slice(0, 3);
 
@@ -193,7 +193,7 @@ export function AiOpportunityEnginePage() {
       </section>
 
       <DetailPanel
-        open={Boolean(selected)}
+        open={selected !== null}
         onClose={() => setSelectedId(null)}
         title={selected?.title ?? "Oportunidad"}
         subtitle={selected ? `${selected.region} • ${selected.product} • ${formatChannelLabel(selected.channel)}` : ""}
