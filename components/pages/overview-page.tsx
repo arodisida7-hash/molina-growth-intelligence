@@ -94,15 +94,11 @@ export function OverviewPage() {
         description="Oportunidades priorizadas, impacto esperado y lectura comercial accionable."
       />
 
-      <section className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
+      <section className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
         <Card className="border-white/10 bg-white/[0.04]">
           <CardHeader className="gap-4 border-b border-white/10 pb-5">
-            <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
-              <div className="space-y-2">
-                <p className="text-xs uppercase tracking-[0.2em] text-accent">Start here</p>
-                <CardTitle className="text-3xl">Top Commercial Opportunities</CardTitle>
-                <p className="text-sm text-slate-400">Selecciona una oportunidad y actualiza el canvas de decisión.</p>
-              </div>
+            <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+              <CardTitle className="text-3xl">Top Commercial Opportunities</CardTitle>
               <div className="flex flex-wrap gap-2">
                 {["Todos", "Alta prioridad", "Watchlist"].map((option) => (
                   <button
@@ -126,8 +122,8 @@ export function OverviewPage() {
               className="max-w-full"
             />
           </CardHeader>
-          <CardContent className="grid gap-4 pt-6 xl:grid-cols-[1fr_1fr_1fr]">
-            {topPriorities.map((item, index) => {
+          <CardContent className="grid gap-3 pt-6">
+            {topPriorities.map((item) => {
               const active = selectedOpportunity.id === item.id;
 
               return (
@@ -141,33 +137,28 @@ export function OverviewPage() {
                   }`}
                 >
                   <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent to-transparent opacity-70" />
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-sm font-medium text-white">{item.region}</p>
-                      <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">{item.product}</p>
-                    </div>
-                    <div className="shrink-0">
-                      <StatusChip label={item.status} />
-                    </div>
-                  </div>
-                  <div className="mt-5 grid grid-cols-2 gap-3">
-                    <MetricChip label="Canal" value={item.channel} />
-                    <MetricChip label="Impacto" value={item.impactRange} />
-                  </div>
-                  <div className="mt-5 rounded-2xl bg-white/[0.04] px-4 py-3">
-                    <div className="flex items-center justify-between gap-4">
-                      <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Opportunity score</p>
-                      <div className="inline-flex items-center gap-1 text-sm text-white">
-                        {item.opportunityScore}
-                        <ArrowUpRight className="h-4 w-4 text-emerald-300" />
+                  <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr] xl:items-center">
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="text-lg font-medium text-white">{item.region}</p>
+                          <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">{item.product}</p>
+                        </div>
+                        <div className="shrink-0">
+                          <StatusChip label={item.status} />
+                        </div>
+                      </div>
+                      <p className="clamp-2 text-sm leading-7 text-slate-300">{item.action}</p>
+                      <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-accent">
+                        Abrir decision canvas
+                        <ArrowRight className="h-4 w-4" />
                       </div>
                     </div>
-                    <MiniBar value={item.opportunityScore} className="mt-3" />
-                  </div>
-                  <p className="clamp-3 mt-5 text-sm leading-7 text-slate-300">{item.action}</p>
-                  <div className="mt-5 inline-flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-accent">
-                    Ver lectura
-                    <ArrowRight className="h-4 w-4" />
+                    <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+                      <MetricChip label="Canal" value={item.channel} />
+                      <MetricChip label="Impacto" value={item.impactRange} />
+                      <ScoreTile value={item.opportunityScore} />
+                    </div>
                   </div>
                 </button>
               );
@@ -434,6 +425,21 @@ function MetricChip({ label, value }: { label: string; value: string }) {
     <div className="rounded-2xl bg-white/[0.04] px-4 py-3">
       <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">{label}</p>
       <p className="mt-2 text-sm text-white">{value}</p>
+    </div>
+  );
+}
+
+function ScoreTile({ value }: { value: number }) {
+  return (
+    <div className="rounded-2xl bg-white/[0.04] px-4 py-3">
+      <div className="flex items-center justify-between gap-4">
+        <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Score</p>
+        <div className="inline-flex items-center gap-1 text-sm text-white">
+          {value}
+          <ArrowUpRight className="h-4 w-4 text-emerald-300" />
+        </div>
+      </div>
+      <MiniBar value={value} className="mt-3" />
     </div>
   );
 }

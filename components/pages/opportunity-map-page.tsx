@@ -64,11 +64,11 @@ export function OpportunityMapPage() {
                       </div>
                       <div className="rounded-full bg-white/[0.06] px-3 py-1 text-sm font-medium text-white">{region.opportunityScore}</div>
                     </div>
-                    <div className="mt-5 grid grid-cols-2 gap-3">
-                      <MetricChip label="Demanda" value={region.demandIndex} />
-                      <MetricChip label="Penetracion" value={region.penetrationIndex} />
-                      <MetricChip label="Margen" value={region.marginPotential} />
-                      <MetricChip label="Stock" value={100 - region.stockRisk} />
+                    <div className="mt-5 grid grid-cols-2 gap-2">
+                      <MetricChip label="DEM" value={region.demandIndex} />
+                      <MetricChip label="PEN" value={region.penetrationIndex} />
+                      <MetricChip label="MAR" value={region.marginPotential} />
+                      <MetricChip label="STK" value={100 - region.stockRisk} />
                     </div>
                   </button>
                 );
@@ -212,11 +212,9 @@ function ScoreLine({ label, value }: { label: string; value: number }) {
 
 function MetricChip({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-2xl bg-white/[0.04] px-3 py-3">
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-[10px] uppercase tracking-[0.08em] text-slate-500">{label}</p>
-        <p className="text-base text-white">{value}</p>
-      </div>
+    <div className="rounded-2xl bg-white/[0.04] px-3 py-3 text-center">
+      <p className="text-[10px] uppercase tracking-[0.18em] text-slate-500">{label}</p>
+      <p className="mt-2 text-base text-white">{value}</p>
     </div>
   );
 }
